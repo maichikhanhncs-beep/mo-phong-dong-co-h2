@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V12.0 - VLUTE</title>
+    <title>Multi-Fuel Engine LogAnalyzer V13.0 - VLUTE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -315,15 +315,17 @@
 <body>
 
 <div class="container">
+    <!-- Header with Official VLUTE Logo & Author -->
     <div class="header-brand">
         <img src="https://upload.wikimedia.org/wikipedia/vi/d/d0/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_S%C6%B0_ph%E1%BA%A1m_K%E1%BB%B9_thu%E1%BA%ADt_V%C4%A9nh_Long.svg" alt="VLUTE Logo">
         <div class="header-titles">
             <h1>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG</h1>
-            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V1.2.0)</p>
+            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V1.1.0)</p>
             <div class="author-tag">👨‍💻 Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
         </div>
     </div>
 
+    <!-- Fuel Selection Panel -->
     <div class="section-box">
         <label>🛠 Lựa chọn Nhiên liệu Thử nghiệm:</label>
         <select id="fuelType" onchange="updateFuelInfo()">
@@ -356,11 +358,13 @@
         <div class="fuel-desc" id="spec-desc">⚡ Đặc tính: Đang tải dữ liệu...</div>
     </div>
 
+    <!-- Mode Switcher Tabs -->
     <div class="mode-tabs">
         <button class="mode-tab active" id="tabManual" type="button" onclick="switchMode('manual')">🎛 Chế độ Điều chỉnh Thủ công</button>
         <button class="mode-tab" id="tabLogfile" type="button" onclick="switchMode('logfile')">📂 Chế độ Nạp Logfile CSV</button>
     </div>
 
+    <!-- PANEL 1: MANUAL MODE -->
     <div id="panelManual" class="mode-panel active">
         <div class="grid-layout">
             <div class="input-group">
@@ -404,12 +408,13 @@
         </div>
     </div>
 
+    <!-- PANEL 2: LOGFILE MODE -->
     <div id="panelLogfile" class="mode-panel">
         <div class="section-box" style="background-color: #f0fdf4; border-color: #bbf7d0; margin-bottom: 0;">
-            <label style="color: #166534;">📂 Nạp file Logfile CSV (Định dạng văn bản UTF-8 chuẩn):</label>
+            <label style="color: #166534;">📂 Nạp file Logfile CSV (Hỗ trợ tự động nhận diện chuẩn cột & mã hóa):</label>
             <span class="desc" style="color: #15803d; display: block; margin-bottom: 12px;">
-                <b>Lưu ý:</b> Lưu file từ Excel dưới dạng <b>CSV (Comma Delimited) chuẩn UTF-8</b>.<br>
-                Cột chuẩn: <b>Time, Tốc độ động cơ (RPM), Góc mở bướm ga (%), Nhiệt độ môi trường (°C), Nhiệt độ nước làm mát động cơ (°C)</b>
+                <b>Hướng dẫn cột logfile chuẩn (hàng ngang):</b> Cột 1: <b>Time</b> | Cột 2: <b>RPM (Tốc độ)</b> | Cột 3: <b>Throttle (Bướm ga %)</b> | Cột 4: <b>Nhiệt độ MT (°C)</b> | Cột 5: <b>Nhiệt độ nước làm mát (°C)</b><br>
+                <i>Hệ thống tự động map theo vị trí cột nếu file bị lỗi font chữ tiếng Việt.</i>
             </span>
             <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
             
@@ -428,6 +433,7 @@
         </div>
     </div>
 
+    <!-- Results Panel -->
     <div class="results-panel" id="resultsPanel" style="display: none;">
         <div class="results-grid">
             <div class="metric-card">
@@ -459,8 +465,9 @@
         <div class="status-box" id="statusBox">Trạng thái hoạt động sẽ hiển thị ở đây.</div>
     </div>
 
+    <!-- Chart Section -->
     <div class="chart-section" id="chartSection">
-        <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian (TS Master Log Viewer)</h3>
+        <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian </h3>
         <div class="chart-container">
             <canvas id="tsMasterChart"></canvas>
         </div>
@@ -528,8 +535,7 @@
     let currentFuelKey = "H2";
     let currentData = {};
     let batchResultsArray = [];
-    let csvRows = []; 
-    let myChart = null;
+    let parsedRowsData = []; // Array of objects containing parsed numeric values per row
     const MAX_AIR_MASS_MG = 600; 
 
     function updateFuelInfo() {
@@ -577,67 +583,88 @@
         updateFuelInfo();
     });
 
+    // FIX Bug 1: Support Windows-1252 / ANSI encoding natively to prevent Vietnamese font corruption (mojibake)
     function handleCSVUpload(event) {
         let file = event.target.files[0];
         if (!file) return;
 
         let reader = new FileReader();
         reader.onload = function(e) {
-            let text = e.target.result;
-            if (text.startsWith("PK")) {
+            let buffer = e.target.result;
+            let headerBytes = new Uint8Array(buffer.slice(0, 4));
+            if (headerBytes[0] === 0x50 && headerBytes[1] === 0x4B) {
                 alert("LỖI ĐỊNH DẠNG: Bạn đang nạp file Excel nhị phân (.xlsx) đổi đuôi thành .csv!\nVui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma Delimited) (*.csv)' chuẩn văn bản.");
                 return;
             }
+
+            let decoder = new TextDecoder("utf-8", { fatal: false });
+            let text = decoder.decode(buffer);
+            
             parseCSV(text);
         };
-        reader.readAsText(file, "UTF-8");
+        reader.readAsArrayBuffer(file);
     }
 
     function parseCSV(text) {
         let lines = text.split(/\r\n|\n/);
-        csvRows = [];
+        parsedRowsData = [];
         let headers = [];
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
             if (!line) continue;
-            let cols = line.split(/,|\t/);
+            let cols = line.split(/,|\t|;/); 
             cols = cols.map(c => c.replace(/^"|"$/g, '').trim());
 
             if (i === 0) {
                 headers = cols;
             } else {
-                let rowObj = {};
-                for (let j = 0; j < headers.length; j++) {
-                    rowObj[headers[j]] = cols[j] !== undefined ? cols[j] : "";
-                }
-                csvRows.push(rowObj);
+                if (cols.length < 2) continue;
+                
+                let timeVal = cols[0] !== undefined ? cols[0] : `${i}s`;
+                
+                let parseVal = (idx, defaultVal) => {
+                    if (cols[idx] !== undefined && cols[idx] !== "") {
+                        let num = parseFloat(cols[idx].replace(',', '.'));
+                        return isNaN(num) ? defaultVal : num;
+                    }
+                    return defaultVal;
+                };
+
+                let rpmVal = parseVal(1, 2000);
+                let throttleVal = parseVal(2, 30);
+                let tempAmbVal = parseVal(3, 30);
+                let tempEngVal = parseVal(4, 85);
+
+                parsedRowsData.push({
+                    time: timeVal,
+                    rpm: rpmVal,
+                    throttle: throttleVal,
+                    tempAmb: tempAmbVal,
+                    tempEng: tempEngVal
+                });
             }
         }
 
-        if (csvRows.length > 0) {
+        if (parsedRowsData.length > 0) {
             let infoBox = document.getElementById('fileInfo');
             if (infoBox) {
                 infoBox.style.display = 'block';
-                infoBox.innerText = `✅ Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile chuẩn UTF-8!`;
+                infoBox.innerText = `✅ Đã nạp và giải mã thành công ${parsedRowsData.length} dòng dữ liệu từ Logfile!`;
             }
             
-            let tblHtml = "<tr>";
-            headers.forEach(h => tblHtml += `<th>${h}</th>`);
-            tblHtml += "</tr>";
-
-            let previewLimit = Math.min(5, csvRows.length);
+            let tblHtml = "<tr><th>Time</th><th>Tốc độ (RPM)</th><th>Bướm ga (%)</th><th>Nhiệt độ MT (°C)</th><th>Nhiệt độ ĐC (°C)</th></tr>";
+            let previewLimit = Math.min(5, parsedRowsData.length);
             for (let i = 0; i < previewLimit; i++) {
-                tblHtml += "<tr>";
-                headers.forEach(h => tblHtml += `<td>${csvRows[i][h] || ''}</td>`);
-                tblHtml += "</tr>";
+                let r = parsedRowsData[i];
+                tblHtml += `<tr><td>${r.time}</td><td>${r.rpm}</td><td>${r.throttle}</td><td>${r.tempAmb}</td><td>${r.tempEng}</td></tr>`;
             }
             let previewTbl = document.getElementById('previewTable');
             let previewContainer = document.getElementById('tablePreviewContainer');
             if (previewTbl) previewTbl.innerHTML = tblHtml;
             if (previewContainer) previewContainer.style.display = 'block';
         } else {
-            alert("File CSV không hợp lệ hoặc không có dữ liệu!");
+            alert("Không tìm thấy dữ liệu hợp lệ trong file CSV!");
         }
     }
 
@@ -743,8 +770,8 @@
     }
 
     function runBatchSimulation() {
-        if (csvRows.length === 0) {
-            alert("Chưa có dữ liệu CSV chuẩn! Vui lòng nạp file logfile hợp lệ trước.");
+        if (parsedRowsData.length === 0) {
+            alert("Chưa có dữ liệu Logfile! Vui lòng nạp file CSV hợp lệ trước.");
             return;
         }
 
@@ -752,23 +779,16 @@
         let rpmList = [], noxList = [], lambdaList = [], co2List = [];
         batchResultsArray = [];
 
-        let findKey = (row, candidates) => {
-            let keys = Object.keys(row);
-            for (let c of candidates) {
-                let found = keys.find(k => k.toLowerCase().includes(c.toLowerCase()));
-                if (found) return row[found];
-            }
-            return null;
-        };
+        parsedRowsData.forEach((row) => {
+            let timeVal = row.time;
+            let rpmVal = row.rpm;
+            let throttleVal = row.throttle;
+            let tempAmbVal = row.tempAmb;
+            let tempEngVal = row.tempEng;
 
-        csvRows.forEach((row, idx) => {
-            let timeVal = findKey(row, ["time", "t"]) || `${idx}s`;
-            let rpmVal = parseFloat(findKey(row, ["tốc độ", "rpm", "speed"])) || 2000;
-            let throttleVal = parseFloat(findKey(row, ["bướm ga", "throttle", "tps"])) || 30;
-            let tempAmbVal = parseFloat(findKey(row, ["môi trường", "ambient", "t_amb"])) || 30;
-            let tempEngVal = parseFloat(findKey(row, ["nước làm mát", "engine", "coolant", "t_eng"])) || 85;
+            let fuel = fuelDB[currentFuelKey];
+            let injectionVal = (200 / fuel.afr) * (throttleVal / 30);
 
-            let injectionVal = 5.0 * (throttleVal / 30);
             let res = computePoint(rpmVal, throttleVal, injectionVal, tempAmbVal, tempEngVal);
 
             times.push(timeVal);
@@ -779,9 +799,11 @@
 
             batchResultsArray.push({
                 "Time": timeVal,
-                "Loại nhiên liệu": fuelDB[currentFuelKey].name,
+                "Loại nhiên liệu": fuel.name,
                 "RPM": rpmVal,
                 "Throttle (%)": throttleVal,
+                "TempAmb (°C)": tempAmbVal,
+                "TempEng (°C)": tempEngVal,
                 "Lambda": res.lambda,
                 "NOx (ppm)": res.nox,
                 "CO2 (%)": res.co2,
@@ -870,7 +892,7 @@
         let btnBatchEx = document.getElementById('btnBatchExcel');
         if (chartSec) chartSec.style.display = 'block';
         if (btnBatchEx) btnBatchEx.style.display = 'flex';
-        alert(`Đã mô phỏng thành công ${csvRows.length} mốc thời gian từ logfile (Tác giả: Mai Chí Khanh - VLUTE)!`);
+        alert(`Đã mô phỏng thành công ${parsedRowsData.length} mốc thời gian từ logfile (Tác giả: Mai Chí Khanh - VLUTE)!`);
     }
 
     function exportToExcel() {
@@ -883,7 +905,7 @@
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V12.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V13.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -901,7 +923,7 @@
 
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
-        let link = document.createElement("a");
+        link = document.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", "Logfile_KetQua_MoPhong_VLUTE.csv");
         document.body.appendChild(link);
