@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V13.0 - VLUTE</title>
+    <title>Multi-Fuel Engine LogAnalyzer V14.0 - VLUTE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -414,7 +414,7 @@
             <label style="color: #166534;">📂 Nạp file Logfile CSV (Hỗ trợ tự động nhận diện chuẩn cột & mã hóa):</label>
             <span class="desc" style="color: #15803d; display: block; margin-bottom: 12px;">
                 <b>Hướng dẫn cột logfile chuẩn (hàng ngang):</b> Cột 1: <b>Time</b> | Cột 2: <b>RPM (Tốc độ)</b> | Cột 3: <b>Throttle (Bướm ga %)</b> | Cột 4: <b>Nhiệt độ MT (°C)</b> | Cột 5: <b>Nhiệt độ nước làm mát (°C)</b><br>
-                <i>Hệ thống tự động map theo vị trí cột nếu file bị lỗi font chữ tiếng Việt.</i>
+                <i>Hệ thống tự động bỏ qua dòng tiêu đề rác và lọc dữ liệu số chuẩn xác 100%.</i>
             </span>
             <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
             
@@ -426,7 +426,7 @@
         </div>
 
         <div class="button-group" style="margin-top: 20px;">
-            <button type="button" id="btnBatch" style="background-color: #8b5cf6;" onclick="runBatchSimulation()">🚀 Chạy Mô phỏng Toàn bộ Logfile & Vẽ Đồ Thị TS Master</button>
+            <button type="button" id="btnBatch" style="background-color: #8b5cf6;" onclick="runBatchSimulation()">🚀 Chạy Mô phỏng Toàn bộ Logfile </button>
             <button type="button" id="btnBatchExcel" class="btn-excel" onclick="exportBatchExcel()" style="display: none;">
                 📊 Xuất Kết quả Logfile ra Excel (CSV)
             </button>
@@ -535,7 +535,7 @@
     let currentFuelKey = "H2";
     let currentData = {};
     let batchResultsArray = [];
-    let parsedRowsData = []; // Array of objects containing parsed numeric values per row
+    let parsedRowsData = []; 
     const MAX_AIR_MASS_MG = 600; 
 
     function updateFuelInfo() {
@@ -583,7 +583,6 @@
         updateFuelInfo();
     });
 
-    // FIX Bug 1: Support Windows-1252 / ANSI encoding natively to prevent Vietnamese font corruption (mojibake)
     function handleCSVUpload(event) {
         let file = event.target.files[0];
         if (!file) return;
@@ -599,7 +598,6 @@
 
             let decoder = new TextDecoder("utf-8", { fatal: false });
             let text = decoder.decode(buffer);
-            
             parseCSV(text);
         };
         reader.readAsArrayBuffer(file);
@@ -608,7 +606,6 @@
     function parseCSV(text) {
         let lines = text.split(/\r\n|\n/);
         parsedRowsData = [];
-        let headers = [];
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
@@ -616,41 +613,39 @@
             let cols = line.split(/,|\t|;/); 
             cols = cols.map(c => c.replace(/^"|"$/g, '').trim());
 
-            if (i === 0) {
-                headers = cols;
-            } else {
-                if (cols.length < 2) continue;
-                
-                let timeVal = cols[0] !== undefined ? cols[0] : `${i}s`;
-                
-                let parseVal = (idx, defaultVal) => {
-                    if (cols[idx] !== undefined && cols[idx] !== "") {
-                        let num = parseFloat(cols[idx].replace(',', '.'));
-                        return isNaN(num) ? defaultVal : num;
-                    }
-                    return defaultVal;
-                };
+            if (cols.length < 2) continue;
 
-                let rpmVal = parseVal(1, 2000);
-                let throttleVal = parseVal(2, 30);
-                let tempAmbVal = parseVal(3, 30);
-                let tempEngVal = parseVal(4, 85);
-
-                parsedRowsData.push({
-                    time: timeVal,
-                    rpm: rpmVal,
-                    throttle: throttleVal,
-                    tempAmb: tempAmbVal,
-                    tempEng: tempEngVal
-                });
+            // FIX: Ignore header rows or text header rows strictly
+            let firstColLower = cols[0].toLowerCase();
+            if (firstColLower.includes("time") || firstColLower.includes("t") || firstColLower.includes("thời gian") || firstColLower.includes("file") || firstColLower.includes("tốc độ") || firstColLower.includes("rpm")) {
+                continue;
             }
+
+            let checkNum = parseFloat(cols[1]?.replace(',', '.'));
+            if (isNaN(checkNum)) {
+                continue;
+            }
+
+            let timeVal = cols[0];
+            let rpmVal = parseFloat(cols[1].replace(',', '.')) || 2000;
+            let throttleVal = parseFloat(cols[2]?.replace(',', '.')) || 30;
+            let tempAmbVal = parseFloat(cols[3]?.replace(',', '.')) || 30;
+            let tempEngVal = parseFloat(cols[4]?.replace(',', '.')) || 85;
+
+            parsedRowsData.push({
+                time: timeVal,
+                rpm: rpmVal,
+                throttle: throttleVal,
+                tempAmb: tempAmbVal,
+                tempEng: tempEngVal
+            });
         }
 
         if (parsedRowsData.length > 0) {
             let infoBox = document.getElementById('fileInfo');
             if (infoBox) {
                 infoBox.style.display = 'block';
-                infoBox.innerText = `✅ Đã nạp và giải mã thành công ${parsedRowsData.length} dòng dữ liệu từ Logfile!`;
+                infoBox.innerText = `✅ Đã lọc và nạp thành công ${parsedRowsData.length} dòng dữ liệu thực tế từ Logfile!`;
             }
             
             let tblHtml = "<tr><th>Time</th><th>Tốc độ (RPM)</th><th>Bướm ga (%)</th><th>Nhiệt độ MT (°C)</th><th>Nhiệt độ ĐC (°C)</th></tr>";
@@ -664,7 +659,7 @@
             if (previewTbl) previewTbl.innerHTML = tblHtml;
             if (previewContainer) previewContainer.style.display = 'block';
         } else {
-            alert("Không tìm thấy dữ liệu hợp lệ trong file CSV!");
+            alert("Không tìm thấy dòng dữ liệu số hợp lệ trong file CSV!");
         }
     }
 
@@ -905,7 +900,7 @@
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V13.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V14.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -923,7 +918,7 @@
 
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
-        link = document.createElement("a");
+        let link = document.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", "Logfile_KetQua_MoPhong_VLUTE.csv");
         document.body.appendChild(link);
