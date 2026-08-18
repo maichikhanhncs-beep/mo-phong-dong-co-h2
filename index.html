@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V6.0 - VLUTE</title>
+    <title>Multi-Fuel Engine LogAnalyzer V7.0 - VLUTE</title>
     <!-- Chart.js for professional logfile plotting -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -50,13 +50,13 @@
             margin-bottom: 25px;
         }
         .header-brand img {
-            height: 75px;
+            height: 80px;
             width: auto;
             object-fit: contain;
         }
         .header-titles h1 {
             color: var(--primary);
-            font-size: 22px;
+            font-size: 21px;
             margin: 0 0 5px 0;
         }
         .header-titles p {
@@ -281,7 +281,6 @@
             line-height: 1.5;
         }
 
-        /* Chart Section */
         .chart-section {
             margin-top: 35px;
             background: #ffffff;
@@ -322,19 +321,13 @@
 <body>
 
 <div class="container">
-    <!-- Header with VLUTE Logo & Author -->
+    <!-- Header with Official VLUTE Logo & Author -->
     <div class="header-brand">
-        <!-- Official VLUTE Logo vector/svg embedded -->
-        <svg viewBox="0 0 200 200" width="80" height="80" style="flex-shrink:0;">
-            <circle cx="100" cy="100" r="95" fill="#1e3a8a" stroke="#d97706" stroke-width="6"/>
-            <text x="100" y="65" fill="#ffffff" font-size="20" font-weight="bold" text-anchor="middle">VLUTE</text>
-            <path d="M 50 110 Q 100 80 150 110" stroke="#fbbf24" stroke-width="4" fill="none"/>
-            <text x="100" y="135" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">SPKT VĨNH LONG</text>
-            <text x="100" y="155" font-size="10" fill="#93c5fd" text-anchor="middle">ĐỘNG CƠ ĐỐT TRONG</text>
-        </svg>
+        <!-- Official VLUTE Logo from Wikimedia Commons SVG -->
+        <img src="https://upload.wikimedia.org/wikipedia/vi/d/d0/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_S%C6%B0_ph%E1%BA%A1m_K%E1%BB%B9_thu%E1%BA%ADt_V%C4%A9nh_Long.svg" alt="VLUTE Logo">
         <div class="header-titles">
             <h1>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG</h1>
-            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V6.0)</p>
+            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V7.0)</p>
             <div class="author-tag">👨‍💻 Kỹ sư / Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
         </div>
     </div>
@@ -425,9 +418,10 @@
     <!-- PANEL 2: LOGFILE MODE -->
     <div id="panelLogfile" class="mode-panel">
         <div class="section-box" style="background-color: #f0fdf4; border-color: #bbf7d0; margin-bottom: 0;">
-            <label style="color: #166534;">📂 Nạp file Logfile CSV (Cấu trúc hàng ngang theo thời gian):</label>
+            <label style="color: #166534;">📂 Nạp file Logfile CSV (Định dạng văn bản UTF-8 chuẩn):</label>
             <span class="desc" style="color: #15803d; display: block; margin-bottom: 12px;">
-                Cột chuẩn: <b>Time, Tốc độ động cơ (RPM), Góc mở bướm ga (%), Nhiệt độ môi trường (°C), Nhiệt độ nước làm mát động cơ (°C)</b>
+                <b>Lưu ý quan trọng:</b> File phải được lưu bằng định dạng <b>CSV (Comma Delimited) chuẩn văn bản UTF-8</b> từ Excel (Không dùng file .xlsx đổi đuôi thành .csv để tránh lỗi mã hóa binary).<br>
+                Cột chuẩn bao gồm: <b>Time, Tốc độ động cơ (RPM), Góc mở bướm ga (%), Nhiệt độ môi trường (°C), Nhiệt độ nước làm mát động cơ (°C)</b>
             </span>
             <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
             
@@ -539,20 +533,28 @@
         let reader = new FileReader();
         reader.onload = function(e) {
             let text = e.target.result;
+            // Check if user uploaded a binary Excel file (.xlsx) renamed to .csv
+            if (text.startsWith("PK")) {
+                alert("LỖI ĐỊNH DẠNG: Bạn đang nạp file Excel nhị phân (.xlsx) nhưng đổi đuôi thành .csv!
+Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma Delimited) (*.csv)' chuẩn văn bản.");
+                return;
+            }
             parseCSV(text);
         };
         reader.readAsText(file, "UTF-8");
     }
 
     function parseCSV(text) {
-        let lines = text.split(/\r\n|\n/);
+        let lines = text.split(/
+|
+/);
         csvRows = [];
         let headers = [];
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
             if (!line) continue;
-            let cols = line.split(/,|\t/);
+            let cols = line.split(/,|	/);
             cols = cols.map(c => c.replace(/^"|"$/g, '').trim());
 
             if (i === 0) {
@@ -569,7 +571,7 @@
         if (csvRows.length > 0) {
             let infoBox = document.getElementById('fileInfo');
             infoBox.style.display = 'block';
-            infoBox.innerText = `✅ Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile!`;
+            infoBox.innerText = `✅ Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile chuẩn UTF-8!`;
             
             let tblHtml = "<tr>";
             headers.forEach(h => tblHtml += `<th>${h}</th>`);
@@ -688,7 +690,7 @@
 
     function runBatchSimulation() {
         if (csvRows.length === 0) {
-            alert("Chưa có dữ liệu CSV! Vui lòng nạp file logfile trước.");
+            alert("Chưa có dữ liệu CSV chuẩn! Vui lòng nạp file logfile hợp lệ trước.");
             return;
         }
 
@@ -801,16 +803,18 @@
     }
 
     function exportToExcel() {
-        let csvContent = "\uFEFF";
-        csvContent += "Thông số,Giá trị\n";
+        let csvContent = "﻿";
+        csvContent += "Thông số,Giá trị
+";
         for (let key in currentData) {
-            csvContent += `"${key}","${currentData[key]}"\n`;
+            csvContent += `"${key}","${currentData[key]}"
+`;
         }
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V6.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V7.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
