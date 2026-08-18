@@ -319,8 +319,8 @@
         <img src="https://upload.wikimedia.org/wikipedia/vi/d/d0/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_S%C6%B0_ph%E1%BA%A1m_K%E1%BB%B9_thu%E1%BA%ADt_V%C4%A9nh_Long.svg" alt="VLUTE Logo">
         <div class="header-titles">
             <h1>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG</h1>
-            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V1.1.0)</p>
-            <div class="author-tag">👨‍💻 Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
+            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V15.0)</p>
+            <div class="author-tag">👨‍💻 Kỹ sư / Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
         </div>
     </div>
 
@@ -421,7 +421,7 @@
         </div>
 
         <div class="button-group" style="margin-top: 20px;">
-            <button type="button" id="btnBatch" style="background-color: #8b5cf6;" onclick="runBatchSimulation()">🚀 Chạy Mô phỏng Toàn bộ Logfile </button>
+            <button type="button" id="btnBatch" style="background-color: #8b5cf6;" onclick="runBatchSimulation()">🚀 Chạy Mô phỏng Toàn bộ Logfile & Vẽ Đồ Thị TS Master</button>
             <button type="button" id="btnBatchExcel" class="btn-excel" onclick="exportBatchExcel()" style="display: none;">
                 📊 Xuất Kết quả Logfile ra Excel (CSV)
             </button>
@@ -460,7 +460,7 @@
     </div>
 
     <div class="chart-section" id="chartSection">
-        <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian </h3>
+        <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian (TS Master Log Viewer)</h3>
         <div class="chart-container">
             <canvas id="tsMasterChart"></canvas>
         </div>
@@ -608,7 +608,6 @@
 
             if (cols.length < 2) continue;
 
-            // FIX V15: Strictly skip row 0 (header row) and any row where column 1 is not a valid number
             if (i === 0 || cols[1].toLowerCase().includes("rpm") || cols[1].toLowerCase().includes("tốc độ") || isNaN(parseFloat(cols[1].replace(',', '.')))) {
                 continue;
             }
@@ -915,4 +914,4 @@
 </script>
 
 </body>
-</html>F
+</html>
