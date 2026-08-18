@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>H2 Engine Pro Predictor V3.0</title>
+    <title>Multi-Fuel Engine Predictor V4.0</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -12,6 +12,7 @@
             --excel-hover: #059669;
             --bg: #f8fafc;
             --card-bg: #ffffff;
+            --info-bg: #eff6ff;
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border: #e2e8f0;
@@ -34,22 +35,74 @@
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            max-width: 800px;
+            max-width: 850px;
             width: 100%;
         }
         h1 {
             color: var(--primary);
             text-align: center;
-            font-size: 28px;
+            font-size: 26px;
             margin-top: 0;
             margin-bottom: 8px;
         }
         p.subtitle {
             text-align: center;
             color: var(--text-muted);
-            margin-bottom: 30px;
-            font-size: 15px;
+            margin-bottom: 25px;
+            font-size: 14px;
         }
+        .fuel-selector {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: var(--info-bg);
+            border-radius: 12px;
+            border: 1px solid #bfdbfe;
+        }
+        .fuel-selector label {
+            display: block;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #93c5fd;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+        }
+        .fuel-specs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        @media (max-width: 600px) {
+            .fuel-specs { grid-template-columns: repeat(2, 1fr); }
+        }
+        .spec-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #dbeafe;
+            text-align: center;
+        }
+        .spec-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+        .spec-val { font-size: 16px; font-weight: bold; color: #1e40af; margin-top: 4px; }
+        .fuel-desc {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #3b82f6;
+            font-style: italic;
+            text-align: justify;
+        }
+
         .grid-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -89,4 +142,410 @@
         }
         .slider-container {
             display: flex;
-            align-items:
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-val {
+            font-weight: bold;
+            color: var(--primary);
+            min-width: 45px;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        @media (max-width: 500px) {
+            .button-group { flex-direction: column; }
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        .btn-excel { background-color: var(--excel); display: none; }
+        .btn-excel:hover { background-color: var(--excel-hover); }
+
+        .results-panel {
+            margin-top: 35px;
+            border-top: 2px dashed var(--border);
+            padding-top: 25px;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        @media (max-width: 500px) {
+            .results-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .metric-card {
+            background-color: var(--bg);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .metric-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 5px;
+        }
+        .highlight-lambda { color: var(--primary); }
+        .highlight-nox { color: var(--danger); }
+        .highlight-co2 { color: #8b5cf6; }
+        
+        .status-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body onload="updateFuelInfo()">
+
+<div class="container">
+    <h1>Công cụ Dự báo Phát thải Đa Nhiên Liệu (V4.0)</h1>
+    <p class="subtitle">Phân tích Nhiệt động lực học Tùy chỉnh theo Thuộc tính Khí cháy</p>
+
+    <!-- Fuel Selection Panel -->
+    <div class="fuel-selector">
+        <label>🛠 Lựa chọn Nhiên liệu Thử nghiệm:</label>
+        <select id="fuelType" onchange="updateFuelInfo()">
+            <option value="H2">Khí Hydro (H2)</option>
+            <option value="CNG">Khí thiên nhiên nén (CNG / CH4)</option>
+            <option value="NH3">Khí Amoniac (NH3)</option>
+            <option value="LPG">Khí gas hóa lỏng (LPG)</option>
+            <option value="GASOLINE">Xăng tiêu chuẩn (Gasoline)</option>
+            <option value="ETHANOL">Cồn sinh học (Ethanol E100)</option>
+        </select>
+        
+        <div class="fuel-specs">
+            <div class="spec-item">
+                <div class="spec-label">AFR Lý thuyết</div>
+                <div class="spec-val" id="spec-afr">34.3</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">Nhiệt trị (LHV)</div>
+                <div class="spec-val" id="spec-lhv">120 MJ/kg</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">Chứa Carbon (C)</div>
+                <div class="spec-val" id="spec-carbon">Không</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">Trị số RON</div>
+                <div class="spec-val" id="spec-ron">> 130</div>
+            </div>
+        </div>
+        <div class="fuel-desc" id="spec-desc">Đặc tính: Cháy siêu nhanh, không phát thải Carbon, nhiệt độ cháy cao.</div>
+    </div>
+
+    <!-- Inputs -->
+    <div class="grid-layout">
+        <div class="input-group">
+            <label>Tốc độ động cơ (RPM)</label>
+            <input type="number" id="rpm" value="2000" step="100" min="500" max="8000">
+        </div>
+        
+        <div class="input-group">
+            <label>Góc mở bướm ga (%)</label>
+            <div class="slider-container">
+                <input type="range" id="throttle" value="30" min="0" max="100" oninput="document.getElementById('throt_val').innerText = this.value + '%'">
+                <span class="slider-val" id="throt_val">30%</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Lưu lượng phun (mg/chu trình)</label>
+            <span class="desc">AFR thấp (như NH3) cần lượng phun lớn hơn H2.</span>
+            <input type="number" id="injection" value="5.0" step="0.5" min="0" max="200">
+        </div>
+
+        <div class="input-group">
+            <label>Nhiệt độ môi trường (&deg;C)</label>
+            <input type="number" id="tempAmb" value="30" step="1" min="-20" max="60">
+        </div>
+
+        <div class="input-group" style="grid-column: 1 / -1;">
+            <label>Nhiệt độ nước làm mát động cơ (&deg;C)</label>
+            <div class="slider-container">
+                <input type="range" id="tempEng" value="85" min="20" max="120" oninput="document.getElementById('tempEng_val').innerText = this.value + '&deg;C'">
+                <span class="slider-val" id="tempEng_val">85&deg;C</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button onclick="calculateEmissions()">Phân tích Khí xả</button>
+        <button id="btnExcel" class="btn-excel" onclick="exportToExcel()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Lưu file Excel (CSV)
+        </button>
+    </div>
+
+    <div class="results-panel" id="resultsPanel" style="display: none;">
+        <div class="results-grid">
+            <div class="metric-card">
+                <div class="metric-title">Lambda (&lambda;)</div>
+                <div class="metric-value highlight-lambda" id="out_lambda">0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">NOx (ppm)</div>
+                <div class="metric-value highlight-nox" id="out_nox">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">CO2 (%)</div>
+                <div class="metric-value highlight-co2" id="out_co2">0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">CO (%)</div>
+                <div class="metric-value" id="out_co">0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">HC (ppm)</div>
+                <div class="metric-value" id="out_hc">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">O2 (%)</div>
+                <div class="metric-value" id="out_o2">0.00</div>
+            </div>
+        </div>
+        
+        <div class="status-box" id="statusBox">
+            Trạng thái hoạt động sẽ hiển thị ở đây.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cơ sở dữ liệu đặc tính nhiên liệu (Thermodynamic Fuel Database)
+    const fuelDB = {
+        "H2": { name: "Hydro", afr: 34.3, lhv: 120, hasCarbon: false, hasNitrogen: false, ron: "> 130", desc: "Cháy siêu nhanh, hỗn hợp siêu loãng tốt, không phát thải CO/CO2, nhưng nhiệt độ cháy rất cao dễ sinh NOx nếu thiếu kiểm soát." },
+        "CNG": { name: "CNG / CH4", afr: 17.2, lhv: 48.0, hasCarbon: true, hasNitrogen: false, ron: "120", desc: "Nhiên liệu khí phổ biến, cháy êm, giảm HC và CO so với xăng. Kháng kích nổ tốt nhờ RON cao." },
+        "NH3": { name: "Amoniac", afr: 6.05, lhv: 18.6, hasCarbon: false, hasNitrogen: true, ron: "130", desc: "Năng lượng xanh không Carbon. Nhược điểm: khó bén lửa, màng lửa chậm, phát sinh nhiều NOx do Nito nội tại trong nhiên liệu (Fuel-NOx)." },
+        "LPG": { name: "LPG", afr: 15.6, lhv: 46.3, hasCarbon: true, hasNitrogen: false, ron: "105", desc: "Khí hóa lỏng (Propane/Butane). Đặc tính gần giống xăng nhưng cháy sạch hơn, dễ bay hơi." },
+        "GASOLINE": { name: "Xăng", afr: 14.7, lhv: 43.4, hasCarbon: true, hasNitrogen: false, ron: "95", desc: "Nhiên liệu lỏng truyền thống. Cần bộ xúc tác 3 chiều (TWC) để xử lý CO, HC và NOx tại mức Lambda = 1." },
+        "ETHANOL": { name: "Ethanol", afr: 9.0, lhv: 26.8, hasCarbon: true, hasNitrogen: false, ron: "108", desc: "Cồn sinh học, có oxy nội tại giúp cháy sạch, hấp thụ nhiệt bay hơi lớn làm mát buồng cháy." }
+    };
+
+    let currentFuelKey = "H2";
+    let currentData = {};
+    const MAX_AIR_MASS_MG = 600; 
+
+    function updateFuelInfo() {
+        let sel = document.getElementById('fuelType');
+        currentFuelKey = sel.value;
+        let f = fuelDB[currentFuelKey];
+        
+        document.getElementById('spec-afr').innerText = f.afr + " : 1";
+        document.getElementById('spec-lhv').innerText = f.lhv + " MJ/kg";
+        document.getElementById('spec-carbon').innerText = f.hasCarbon ? "Có" : "Không";
+        document.getElementById('spec-ron').innerText = f.ron;
+        document.getElementById('spec-desc').innerText = "* Đặc điểm: " + f.desc;
+        
+        // Suggest a base injection quantity to prevent user confusion (since AFR varies wildly)
+        // e.g. at 30% throttle, air mass is ~ 200mg. 
+        // H2 needs ~5.8mg. NH3 needs ~33mg. Gasoline needs ~13mg.
+        let suggestedInj = (200 / f.afr).toFixed(1);
+        document.getElementById('injection').value = suggestedInj;
+    }
+
+    function calculateEmissions() {
+        let fuel = fuelDB[currentFuelKey];
+        let rpm = parseFloat(document.getElementById('rpm').value) || 0;
+        let throttle = parseFloat(document.getElementById('throttle').value) || 0;
+        let injection = parseFloat(document.getElementById('injection').value) || 0;
+        let tempAmb = parseFloat(document.getElementById('tempAmb').value) || 0;
+        let tempEng = parseFloat(document.getElementById('tempEng').value) || 0;
+
+        // Dynamics
+        let airDensityRatio = 298.15 / (tempAmb + 273.15); 
+        let ve = 0.85; 
+        if (rpm > 3500) ve -= (rpm - 3500) * 0.00005; 
+        
+        let throttleFactor = Math.pow(throttle / 100, 0.8); 
+        let airMass = throttleFactor * MAX_AIR_MASS_MG * airDensityRatio * ve;
+
+        // Lambda calc based on specific fuel AFR
+        let lambda = 99.99; 
+        if (injection > 0.1) {
+            let actualAFR = airMass / injection;
+            lambda = actualAFR / fuel.afr;
+        }
+
+        // Peak Temp calculation (simplified heuristic)
+        let heatRelease = injection * fuel.lhv; // LHV in MJ/kg = J/mg
+        let thermalMass = airMass * 1.005 + injection * 2.0; 
+        let deltaT = thermalMass > 0 ? (heatRelease / thermalMass) * 1000 * 0.4 : 0; 
+        let peakTemp = (tempEng + 273.15) * 1.2 + deltaT; 
+        
+        let nox = 0, o2 = 0, co = 0, co2 = 0, hc = 0;
+        let statusMsg = "", statusColor = "#f0fdf4", statusBorder = "#bbf7d0", statusTextColor = "#166534";
+
+        if (lambda < 0.4) {
+            statusMsg = "CẢNH BÁO TỐI KHẨN: Quá ngộp nhiên liệu (Flood/Rich limit). Không thể cháy.";
+            statusColor = "#fef2f2"; statusBorder = "#fecaca"; statusTextColor = "#991b1b";
+        } else {
+            // O2 Calculation (Excess oxygen)
+            o2 = lambda >= 1 ? 21 * (1 - 1/lambda) : 0;
+
+            // CARBON EMISSIONS (CO2, CO, HC)
+            if (fuel.hasCarbon) {
+                if (lambda >= 1) {
+                    co2 = 14 / lambda; // Diluted by air
+                    co = 0.05 / lambda; // near zero
+                    hc = 10 * lambda; // slight increase if very lean misfire
+                    if(lambda > 1.4) hc += (lambda - 1.4) * 500; // Lean misfire limit for carbon fuels
+                } else {
+                    co2 = 14 * lambda; // Incomplete combustion reduces CO2
+                    co = (1 - lambda) * 15; // CO spikes when rich
+                    hc = (1 - lambda) * 3000; // Unburned fuel
+                }
+            } else {
+                // H2 or NH3: zero carbon emissions natively
+                co2 = 0;
+                // Add trace oil burning artifact for realism at low rpm/cold engine
+                if (rpm <= 1200 && throttleFactor < 0.3 && tempEng < 75) {
+                    co = 0.03;
+                    hc = 15;
+                } else {
+                    co = 0; hc = 0;
+                }
+            }
+
+            // NOx EMISSIONS (Thermal NOx + Fuel NOx)
+            let thermalNox = 0;
+            // Thermal NOx window is usually lambda 0.8 to 1.5, peaking around 1.05 - 1.2
+            if (lambda > 0.7 && lambda < 3.5) {
+                let lambdaMod = Math.max(0, 1 - Math.pow(Math.abs(lambda - 1.15)/0.7, 2.0));
+                let tempMod = peakTemp > 1600 ? Math.pow((peakTemp - 1600) / 100, 2) * 50 : 0;
+                thermalNox = lambdaMod * tempMod;
+                thermalNox *= (2000 / Math.max(1000, rpm)); // Residence time factor
+            }
+            
+            // Ammonia (NH3) generates massive Fuel-NOx even at lower temps due to Nitrogen atoms in fuel
+            let fuelNox = 0;
+            if (fuel.hasNitrogen && lambda > 0.8) {
+                fuelNox = (injection * 50) * Math.min(1.5, lambda); // Rough heuristic for NH3 oxidation to NO
+            }
+
+            nox = thermalNox + fuelNox;
+
+            // STATUS MESSAGES
+            if (lambda >= 0.95 && lambda <= 1.05) {
+                statusMsg = "STOICHIOMETRIC: Tỷ lệ hòa trộn lý tưởng (Lambda ~ 1). Thích hợp dùng bộ trung hòa khí xả 3 chiều (TWC).";
+                statusColor = "#eff6ff"; statusBorder = "#bfdbfe"; statusTextColor = "#1e40af";
+            } else if (lambda > 1.05 && lambda < 1.6) {
+                statusMsg = "HỖN HỢP NGHÈO (Lean): Tiết kiệm nhiên liệu nhưng sinh lượng lớn khí độc NOx do thừa Oxy và nhiệt cao.";
+                statusColor = "#fffbeb"; statusBorder = "#fde68a"; statusTextColor = "#92400e";
+            } else if (lambda >= 1.6 && lambda <= 2.5) {
+                if(!fuel.hasCarbon) statusMsg = "SIÊU LOÃNG (Ultra-Lean): Chiến lược hoàn hảo cho H2/NH3, kiểm soát NOx tuyệt đối nhờ nhiệt độ cháy thấp.";
+                else statusMsg = "CẢNH BÁO LOÃNG: Khí chứa Carbon khó cháy ở mức này, dễ gây hiện tượng bỏ lửa (Misfire).";
+                statusColor = "#f0fdf4"; statusBorder = "#bbf7d0"; statusTextColor = "#166534";
+            } else if (lambda < 0.95) {
+                statusMsg = "HỖN HỢP ĐẬM (Rich): Mất công suất, lãng phí nhiên liệu. Khí xả có mùi sống, tạo nhiều bồ hóng/CO.";
+                statusColor = "#fef2f2"; statusBorder = "#fecaca"; statusTextColor = "#991b1b";
+            } else {
+                statusMsg = "QUÁ LOÃNG: Động cơ ngừng cháy (Lean limit misfire).";
+                statusColor = "#f8fafc"; statusBorder = "#cbd5e1"; statusTextColor = "#475569";
+            }
+        }
+
+        // Clip and Format Values
+        nox = Math.min(6000, Math.max(0, nox));
+        let finalLambda = lambda > 20 ? "99.99" : lambda.toFixed(3);
+        let finalO2 = Math.max(0, o2).toFixed(2);
+        let finalCO2 = Math.max(0, co2).toFixed(2);
+        let finalCO = Math.max(0, co).toFixed(2);
+        let finalHC = Math.round(Math.max(0, hc));
+        let finalNox = Math.round(nox);
+
+        // Update UI
+        document.getElementById('out_lambda').innerText = lambda > 20 ? "∞" : finalLambda;
+        document.getElementById('out_nox').innerText = finalNox;
+        document.getElementById('out_co2').innerText = finalCO2;
+        document.getElementById('out_co').innerText = finalCO;
+        document.getElementById('out_hc').innerText = finalHC;
+        document.getElementById('out_o2').innerText = finalO2;
+
+        let box = document.getElementById('statusBox');
+        box.innerText = statusMsg;
+        box.style.backgroundColor = statusColor;
+        box.style.borderColor = statusBorder;
+        box.style.color = statusTextColor;
+        
+        document.getElementById('resultsPanel').style.display = 'block';
+        document.getElementById('btnExcel').style.display = 'flex'; 
+
+        // Store for Excel
+        currentData = {
+            "Loại nhiên liệu": fuel.name,
+            "AFR Lý thuyết": fuel.afr,
+            "Tốc độ động cơ (RPM)": rpm,
+            "Góc mở bướm ga (%)": throttle,
+            "Lượng phun (mg)": injection,
+            "Nhiệt độ MT (C)": tempAmb,
+            "Nhiệt độ ĐC (C)": tempEng,
+            "Lambda": finalLambda,
+            "NOx (ppm)": finalNox,
+            "CO2 (%)": finalCO2,
+            "CO (%)": finalCO,
+            "HC (ppm)": finalHC,
+            "O2 (%)": finalO2,
+            "Trạng thái": statusMsg
+        };
+    }
+
+    function exportToExcel() {
+        let csvContent = "﻿";
+        csvContent += "Thông số,Giá trị
+";
+        
+        for (let key in currentData) {
+            let value = typeof currentData[key] === 'string' ? `"${currentData[key]}"` : currentData[key];
+            csvContent += `"${key}",${value}
+`;
+        }
+
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement("a");
+        link.setAttribute("href", url);
+        
+        let date = new Date();
+        let timeStr = date.getFullYear() + "" + (date.getMonth()+1).toString().padStart(2, '0') + "" + date.getDate().toString().padStart(2, '0') + "_" + date.getHours().toString().padStart(2, '0') + date.getMinutes().toString().padStart(2, '0');
+        link.setAttribute("download", "DuBao_PhatThai_V4_" + timeStr + ".csv");
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
