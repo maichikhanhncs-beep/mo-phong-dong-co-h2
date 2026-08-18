@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V18.0 - VLUTE</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js?v=18.0"></script>
+    <title>Multi-Fuel Engine LogAnalyzer V19.0 - VLUTE</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #1d4ed8;
@@ -319,7 +319,7 @@
         <img src="https://upload.wikimedia.org/wikipedia/vi/d/d0/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_S%C6%B0_ph%E1%BA%A1m_K%E1%BB%B9_thu%E1%BA%ADt_V%C4%A9nh_Long.svg" alt="VLUTE Logo">
         <div class="header-titles">
             <h1>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG</h1>
-            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V18.0)</p>
+            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V19.0)</p>
             <div class="author-tag">👨‍💻 Kỹ sư / Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
         </div>
     </div>
@@ -468,6 +468,14 @@
 </div>
 
 <script>
+    // Khai báo biến toàn cục chống lỗi myChart is not defined
+    let myChart = null;
+    let parsedRowsData = []; 
+    let batchResultsArray = [];
+    let currentData = {};
+    let currentFuelKey = "H2";
+    const MAX_AIR_MASS_MG = 600; 
+
     const fuelDB = {
         "H2": { 
             name: "Khí Hydro (H2)", 
@@ -524,12 +532,6 @@
             desc: "⚡ Đặc tính: Nhiên liệu sinh học chứa oxy phân tử trong cấu trúc. Nhiệt bay hơi ẩn lớn giúp làm mát buồng cháy hiệu quả, tăng công suất động cơ và giảm phát thải độc hại." 
         }
     };
-
-    let currentFuelKey = "H2";
-    let currentData = {};
-    let batchResultsArray = [];
-    let parsedRowsData = []; 
-    const MAX_AIR_MASS_MG = 600; 
 
     function updateFuelInfo() {
         let sel = document.getElementById('fuelType');
@@ -604,15 +606,12 @@
             let line = lines[i].trim();
             if (!line) continue;
             
-            // Remove leading and trailing double quotes if Excel enclosed the whole line in quotes
             line = line.replace(/^"|"$/g, '');
-
             let cols = line.split(/,|\t|;/); 
             cols = cols.map(c => c.replace(/^"|"$/g, '').trim());
 
             if (cols.length < 2) continue;
 
-            // Skip header row
             let firstColLower = cols[0].toLowerCase();
             if (i === 0 || firstColLower.includes("time") || firstColLower.includes("t") || firstColLower.includes("thời gian") || firstColLower.includes("file") || cols[1].toLowerCase().includes("rpm") || cols[1].toLowerCase().includes("tốc độ") || isNaN(parseFloat(cols[1].replace(',', '.')))) {
                 continue;
@@ -896,7 +895,7 @@
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V18.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V19.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
