@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V5.0 (TS Master Style)</title>
-    <!-- Include Chart.js for professional logfile plotting -->
+    <title>Multi-Fuel Engine LogAnalyzer V6.0 - VLUTE</title>
+    <!-- Chart.js for professional logfile plotting -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --excel: #10b981;
-            --excel-hover: #059669;
+            --primary: #1d4ed8;
+            --primary-hover: #1e40af;
+            --excel: #059669;
+            --excel-hover: #047857;
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --info-bg: #eff6ff;
@@ -40,19 +40,72 @@
             max-width: 950px;
             width: 100%;
         }
-        h1 {
-            color: var(--primary);
-            text-align: center;
-            font-size: 26px;
-            margin-top: 0;
-            margin-bottom: 8px;
-        }
-        p.subtitle {
-            text-align: center;
-            color: var(--text-muted);
+        /* Header VLUTE Style */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 20px;
             margin-bottom: 25px;
-            font-size: 14px;
         }
+        .header-brand img {
+            height: 75px;
+            width: auto;
+            object-fit: contain;
+        }
+        .header-titles h1 {
+            color: var(--primary);
+            font-size: 22px;
+            margin: 0 0 5px 0;
+        }
+        .header-titles p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .author-tag {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #047857;
+        }
+
+        /* Mode Switcher Tabs */
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: #e2e8f0;
+            padding: 5px;
+            border-radius: 10px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-size: 15px;
+        }
+        .mode-tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .mode-panel {
+            display: none;
+        }
+        .mode-panel.active {
+            display: block;
+        }
+
         .section-box {
             margin-bottom: 25px;
             padding: 20px;
@@ -228,7 +281,7 @@
             line-height: 1.5;
         }
 
-        /* Chart Section (TS Master Style) */
+        /* Chart Section */
         .chart-section {
             margin-top: 35px;
             background: #ffffff;
@@ -269,8 +322,22 @@
 <body>
 
 <div class="container">
-    <h1>Công cụ Dự báo & Phân tích Logfile (V5.0)</h1>
-    <p class="subtitle">Hỗ trợ Nạp file CSV theo Thời gian & Vẽ Biểu đồ Động lực học (Phong cách TS Master)</p>
+    <!-- Header with VLUTE Logo & Author -->
+    <div class="header-brand">
+        <!-- Official VLUTE Logo vector/svg embedded -->
+        <svg viewBox="0 0 200 200" width="80" height="80" style="flex-shrink:0;">
+            <circle cx="100" cy="100" r="95" fill="#1e3a8a" stroke="#d97706" stroke-width="6"/>
+            <text x="100" y="65" fill="#ffffff" font-size="20" font-weight="bold" text-anchor="middle">VLUTE</text>
+            <path d="M 50 110 Q 100 80 150 110" stroke="#fbbf24" stroke-width="4" fill="none"/>
+            <text x="100" y="135" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">SPKT VĨNH LONG</text>
+            <text x="100" y="155" font-size="10" fill="#93c5fd" text-anchor="middle">ĐỘNG CƠ ĐỐT TRONG</text>
+        </svg>
+        <div class="header-titles">
+            <h1>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG</h1>
+            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V6.0)</p>
+            <div class="author-tag">👨‍💻 Kỹ sư / Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
+        </div>
+    </div>
 
     <!-- Fuel Selection Panel -->
     <div class="section-box">
@@ -305,62 +372,75 @@
         <div class="fuel-desc" id="spec-desc">Đặc tính: Cháy siêu nhanh, không phát thải Carbon, nhiệt độ cháy cao.</div>
     </div>
 
-    <!-- CSV Logfile Upload Panel -->
-    <div class="section-box" style="background-color: #f0fdf4; border-color: #bbf7d0;">
-        <label style="color: #166534;">📂 Nạp file Logfile CSV (Định dạng theo hàng ngang):</label>
-        <span class="desc" style="color: #15803d; display: block; margin-bottom: 8px;">
-            Cấu trúc file CSV cần có các cột: <b>Time, Tốc độ động cơ (RPM), Góc mở bướm ga (%), Nhiệt độ môi trường (°C), Nhiệt độ nước làm mát động cơ (°C)</b>
-        </span>
-        <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
-        
-        <div id="fileInfo" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #166534; display: none;"></div>
-        
-        <div class="table-preview" id="tablePreviewContainer" style="display: none;">
-            <table class="preview-tbl" id="previewTable"></table>
-        </div>
+    <!-- Mode Switcher Tabs -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" onclick="switchMode('manual')">🎛 Chế độ Điều chỉnh Thủ công</button>
+        <button class="mode-tab" onclick="switchMode('logfile')">📂 Chế độ Nạp Logfile CSV</button>
     </div>
 
-    <!-- Manual Inputs -->
-    <div class="grid-layout">
-        <div class="input-group">
-            <label>Tốc độ động cơ (RPM)</label>
-            <input type="number" id="rpm" value="2400" step="100" min="500" max="8000">
-        </div>
-        
-        <div class="input-group">
-            <label>Góc mở bướm ga (%)</label>
-            <div class="slider-container">
-                <input type="range" id="throttle" value="30" min="0" max="100" oninput="document.getElementById('throt_val').innerText = this.value + '%'">
-                <span class="slider-val" id="throt_val">30%</span>
+    <!-- PANEL 1: MANUAL MODE -->
+    <div id="panelManual" class="mode-panel active">
+        <div class="grid-layout">
+            <div class="input-group">
+                <label>Tốc độ động cơ (RPM)</label>
+                <input type="number" id="rpm" value="2400" step="100" min="500" max="8000">
+            </div>
+            
+            <div class="input-group">
+                <label>Góc mở bướm ga (%)</label>
+                <div class="slider-container">
+                    <input type="range" id="throttle" value="30" min="0" max="100" oninput="document.getElementById('throt_val').innerText = this.value + '%'">
+                    <span class="slider-val" id="throt_val">30%</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Lưu lượng phun (mg/chu trình)</label>
+                <input type="number" id="injection" value="5.0" step="0.5" min="0.1" max="200">
+            </div>
+
+            <div class="input-group">
+                <label>Nhiệt độ môi trường (&deg;C)</label>
+                <input type="number" id="tempAmb" value="30" step="1" min="-20" max="60">
+            </div>
+
+            <div class="input-group" style="grid-column: 1 / -1;">
+                <label>Nhiệt độ nước làm mát động cơ (&deg;C)</label>
+                <div class="slider-container">
+                    <input type="range" id="tempEng" value="85" min="20" max="120" oninput="document.getElementById('tempEng_val').innerText = this.value + '&deg;C'">
+                    <span class="slider-val" id="tempEng_val">85&deg;C</span>
+                </div>
             </div>
         </div>
 
-        <div class="input-group">
-            <label>Lưu lượng phun (mg/chu trình)</label>
-            <input type="number" id="injection" value="5.0" step="0.5" min="0.1" max="200">
-        </div>
-
-        <div class="input-group">
-            <label>Nhiệt độ môi trường (&deg;C)</label>
-            <input type="number" id="tempAmb" value="30" step="1" min="-20" max="60">
-        </div>
-
-        <div class="input-group" style="grid-column: 1 / -1;">
-            <label>Nhiệt độ nước làm mát động cơ (&deg;C)</label>
-            <div class="slider-container">
-                <input type="range" id="tempEng" value="85" min="20" max="120" oninput="document.getElementById('tempEng_val').innerText = this.value + '&deg;C'">
-                <span class="slider-val" id="tempEng_val">85&deg;C</span>
-            </div>
+        <div class="button-group">
+            <button onclick="calculateEmissions()">Chạy Mô phỏng Đơn điểm</button>
+            <button id="btnExcel" class="btn-excel" onclick="exportToExcel()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Lưu file Excel (CSV)
+            </button>
         </div>
     </div>
 
-    <div class="button-group">
-        <button onclick="calculateEmissions()">Chạy Mô phỏng Đơn điểm</button>
-        <button id="btnBatch" style="background-color: #8b5cf6; display: none;" onclick="runBatchSimulation()">🚀 Chạy Mô phỏng Toàn bộ Logfile & Vẽ Đồ Thị</button>
-        <button id="btnExcel" class="btn-excel" onclick="exportToExcel()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            Lưu file Excel (CSV)
-        </button>
+    <!-- PANEL 2: LOGFILE MODE -->
+    <div id="panelLogfile" class="mode-panel">
+        <div class="section-box" style="background-color: #f0fdf4; border-color: #bbf7d0; margin-bottom: 0;">
+            <label style="color: #166534;">📂 Nạp file Logfile CSV (Cấu trúc hàng ngang theo thời gian):</label>
+            <span class="desc" style="color: #15803d; display: block; margin-bottom: 12px;">
+                Cột chuẩn: <b>Time, Tốc độ động cơ (RPM), Góc mở bướm ga (%), Nhiệt độ môi trường (°C), Nhiệt độ nước làm mát động cơ (°C)</b>
+            </span>
+            <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
+            
+            <div id="fileInfo" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #166534; display: none;"></div>
+            
+            <div class="table-preview" id="tablePreviewContainer" style="display: none;">
+                <table class="preview-tbl" id="previewTable"></table>
+            </div>
+        </div>
+
+        <div class="button-group" style="margin-top: 20px;">
+            <button id="btnBatch" style="background-color: #8b5cf6;" onclick="runBatchSimulation()">🚀 Chạy Mô phỏng Toàn bộ Logfile & Vẽ Đồ Thị TS Master</button>
+        </div>
     </div>
 
     <!-- Results Panel -->
@@ -395,7 +475,7 @@
         <div class="status-box" id="statusBox">Trạng thái hoạt động sẽ hiển thị ở đây.</div>
     </div>
 
-    <!-- Chart Section (TS Master Style) -->
+    <!-- Chart Section -->
     <div class="chart-section" id="chartSection">
         <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian (TS Master Log Viewer)</h3>
         <div class="chart-container">
@@ -416,7 +496,7 @@
 
     let currentFuelKey = "H2";
     let currentData = {};
-    let csvRows = []; // Store parsed CSV data
+    let csvRows = []; 
     let myChart = null;
     const MAX_AIR_MASS_MG = 600; 
 
@@ -432,11 +512,26 @@
         document.getElementById('spec-desc').innerText = "* Đặc điểm: " + f.desc;
     }
 
+    function switchMode(mode) {
+        let tabs = document.querySelectorAll('.mode-tab');
+        let panels = document.querySelectorAll('.mode-panel');
+        
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+
+        if (mode === 'manual') {
+            tabs[0].classList.add('active');
+            document.getElementById('panelManual').classList.add('active');
+        } else {
+            tabs[1].classList.add('active');
+            document.getElementById('panelLogfile').classList.add('active');
+        }
+    }
+
     window.onload = function() {
         updateFuelInfo();
     };
 
-    // Parse CSV file uploaded by user
     function handleCSVUpload(event) {
         let file = event.target.files[0];
         if (!file) return;
@@ -450,16 +545,14 @@
     }
 
     function parseCSV(text) {
-        let lines = text.split(/
-|
-/);
+        let lines = text.split(/\r\n|\n/);
         csvRows = [];
         let headers = [];
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
             if (!line) continue;
-            let cols = line.split(/,|	/); // Support comma or tab separated
+            let cols = line.split(/,|\t/);
             cols = cols.map(c => c.replace(/^"|"$/g, '').trim());
 
             if (i === 0) {
@@ -474,10 +567,10 @@
         }
 
         if (csvRows.length > 0) {
-            document.getElementById('fileInfo').style.display = 'block';
-            document.getElementById('fileInfo.innerText = `Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile!`;
+            let infoBox = document.getElementById('fileInfo');
+            infoBox.style.display = 'block';
+            infoBox.innerText = `✅ Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile!`;
             
-            // Show preview table
             let tblHtml = "<tr>";
             headers.forEach(h => tblHtml += `<th>${h}</th>`);
             tblHtml += "</tr>";
@@ -490,13 +583,11 @@
             }
             document.getElementById('previewTable').innerHTML = tblHtml;
             document.getElementById('tablePreviewContainer').style.display = 'block';
-            document.getElementById('btnBatch').style.display = 'flex'; // Show batch simulation button
         } else {
             alert("File CSV không hợp lệ hoặc không có dữ liệu!");
         }
     }
 
-    // Core calculation function for any given point
     function computePoint(rpm, throttle, injection, tempAmb, tempEng) {
         let fuel = fuelDB[currentFuelKey];
         let airDensityRatio = 298.15 / (tempAmb + 273.15); 
@@ -559,7 +650,6 @@
         };
     }
 
-    // Single point simulation from manual inputs
     function calculateEmissions() {
         let rpm = parseFloat(document.getElementById('rpm').value) || 0;
         let throttle = parseFloat(document.getElementById('throttle').value) || 0;
@@ -584,6 +674,7 @@
         document.getElementById('btnExcel').style.display = 'flex'; 
 
         currentData = {
+            "Nhà nghiên cứu": "Mai Chí Khanh (VLUTE)",
             "Loại nhiên liệu": fuelDB[currentFuelKey].name,
             "Tốc độ động cơ (RPM)": rpm,
             "Góc mở bướm ga (%)": throttle,
@@ -595,7 +686,6 @@
         };
     }
 
-    // Batch simulation over CSV logfile and plot TS Master style chart
     function runBatchSimulation() {
         if (csvRows.length === 0) {
             alert("Chưa có dữ liệu CSV! Vui lòng nạp file logfile trước.");
@@ -605,7 +695,6 @@
         let times = [];
         let rpmList = [], noxList = [], lambdaList = [], co2List = [];
 
-        // Flexible column header mapping search
         let findKey = (row, candidates) => {
             let keys = Object.keys(row);
             for (let c of candidates) {
@@ -622,9 +711,7 @@
             let tempAmbVal = parseFloat(findKey(row, ["môi trường", "ambient", "t_amb"])) || 30;
             let tempEngVal = parseFloat(findKey(row, ["nước làm mát", "engine", "coolant", "t_eng"])) || 85;
 
-            // Auto estimate injection based on throttle if not explicitly in CSV
             let injectionVal = 5.0 * (throttleVal / 30);
-
             let res = computePoint(rpmVal, throttleVal, injectionVal, tempAmbVal, tempEngVal);
 
             times.push(timeVal);
@@ -634,7 +721,6 @@
             co2List.push(res.co2);
         });
 
-        // Draw TS Master Style Multi-Axis Chart
         let ctx = document.getElementById('tsMasterChart').getContext('2d');
         if (myChart) {
             myChart.destroy();
@@ -701,7 +787,7 @@
                     },
                     'y-lambda': {
                         type: 'linear',
-                        display: false, // hidden scale to avoid clutter, but tracks values
+                        display: false,
                         position: 'right',
                         min: 0,
                         max: 5
@@ -711,22 +797,20 @@
         });
 
         document.getElementById('chartSection').style.display = 'block';
-        alert(`Đã mô phỏng thành công ${csvRows.length} mốc thời gian từ logfile! Biểu đồ TS Master đã sẵn sàng.`);
+        alert(`Đã mô phỏng thành công ${csvRows.length} mốc thời gian từ logfile (Tác giả: Mai Chí Khanh - VLUTE)!`);
     }
 
     function exportToExcel() {
-        let csvContent = "﻿";
-        csvContent += "Thông số,Giá trị
-";
+        let csvContent = "\uFEFF";
+        csvContent += "Thông số,Giá trị\n";
         for (let key in currentData) {
-            csvContent += `"${key}","${currentData[key]}"
-`;
+            csvContent += `"${key}","${currentData[key]}"\n`;
         }
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_V5.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V6.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
