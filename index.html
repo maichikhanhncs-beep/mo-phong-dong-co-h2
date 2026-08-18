@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V11.0 - VLUTE</title>
+    <title>Multi-Fuel Engine LogAnalyzer V12.0 - VLUTE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -315,17 +315,15 @@
 <body>
 
 <div class="container">
-    <!-- Header with Official VLUTE Logo & Author -->
     <div class="header-brand">
         <img src="https://upload.wikimedia.org/wikipedia/vi/d/d0/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_S%C6%B0_ph%E1%BA%A1m_K%E1%BB%B9_thu%E1%BA%ADt_V%C4%A9nh_Long.svg" alt="VLUTE Logo">
         <div class="header-titles">
             <h1>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG</h1>
-            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V.1.0.0)</p>
+            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V1.2.0)</p>
             <div class="author-tag">👨‍💻 Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
         </div>
     </div>
 
-    <!-- Fuel Selection Panel -->
     <div class="section-box">
         <label>🛠 Lựa chọn Nhiên liệu Thử nghiệm:</label>
         <select id="fuelType" onchange="updateFuelInfo()">
@@ -355,16 +353,14 @@
                 <div class="spec-val" id="spec-ron">> 130</div>
             </div>
         </div>
-        <div class="fuel-desc" id="spec-desc">⚡ Đặc tính: Tốc độ cháy cực nhanh, không phát thải Carbon, nhiệt độ cháy cao.</div>
+        <div class="fuel-desc" id="spec-desc">⚡ Đặc tính: Đang tải dữ liệu...</div>
     </div>
 
-    <!-- Mode Switcher Tabs -->
     <div class="mode-tabs">
         <button class="mode-tab active" id="tabManual" type="button" onclick="switchMode('manual')">🎛 Chế độ Điều chỉnh Thủ công</button>
         <button class="mode-tab" id="tabLogfile" type="button" onclick="switchMode('logfile')">📂 Chế độ Nạp Logfile CSV</button>
     </div>
 
-    <!-- PANEL 1: MANUAL MODE -->
     <div id="panelManual" class="mode-panel active">
         <div class="grid-layout">
             <div class="input-group">
@@ -408,7 +404,6 @@
         </div>
     </div>
 
-    <!-- PANEL 2: LOGFILE MODE -->
     <div id="panelLogfile" class="mode-panel">
         <div class="section-box" style="background-color: #f0fdf4; border-color: #bbf7d0; margin-bottom: 0;">
             <label style="color: #166534;">📂 Nạp file Logfile CSV (Định dạng văn bản UTF-8 chuẩn):</label>
@@ -433,7 +428,6 @@
         </div>
     </div>
 
-    <!-- Results Panel -->
     <div class="results-panel" id="resultsPanel" style="display: none;">
         <div class="results-grid">
             <div class="metric-card">
@@ -465,7 +459,6 @@
         <div class="status-box" id="statusBox">Trạng thái hoạt động sẽ hiển thị ở đây.</div>
     </div>
 
-    <!-- Chart Section -->
     <div class="chart-section" id="chartSection">
         <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian (TS Master Log Viewer)</h3>
         <div class="chart-container">
@@ -580,7 +573,6 @@
         }
     }
 
-    // Force initialization immediately when script loads
     document.addEventListener("DOMContentLoaded", function() {
         updateFuelInfo();
     });
@@ -593,8 +585,7 @@
         reader.onload = function(e) {
             let text = e.target.result;
             if (text.startsWith("PK")) {
-                alert("LỖI ĐỊNH DẠNG: Bạn đang nạp file Excel nhị phân (.xlsx) đổi đuôi thành .csv!
-Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma Delimited) (*.csv)' chuẩn văn bản.");
+                alert("LỖI ĐỊNH DẠNG: Bạn đang nạp file Excel nhị phân (.xlsx) đổi đuôi thành .csv!\nVui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma Delimited) (*.csv)' chuẩn văn bản.");
                 return;
             }
             parseCSV(text);
@@ -892,7 +883,7 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V11.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V12.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
