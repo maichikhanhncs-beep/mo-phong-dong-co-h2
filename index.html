@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V.1.0.0 - VLUTE</title>
+    <title>Multi-Fuel Engine LogAnalyzer V11.0 - VLUTE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -151,8 +151,8 @@
             color: #1e40af;
             font-weight: 500;
             line-height: 1.5;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
             border-radius: 6px;
             border: 1px solid #c7d2fe;
         }
@@ -320,8 +320,8 @@
         <img src="https://upload.wikimedia.org/wikipedia/vi/d/d0/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_S%C6%B0_ph%E1%BA%A1m_K%E1%BB%B9_thu%E1%BA%ADt_V%C4%A9nh_Long.svg" alt="VLUTE Logo">
         <div class="header-titles">
             <h1>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG</h1>
-            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V10.0)</p>
-            <div class="author-tag">👨‍💻 Kỹ sư / Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
+            <p>Hệ thống Mô phỏng & Dự báo Phát thải Đa Nhiên liệu (V.1.0.0)</p>
+            <div class="author-tag">👨‍💻 Nhà nghiên cứu phát triển: Mai Chí Khanh</div>
         </div>
     </div>
 
@@ -340,7 +340,7 @@
         <div class="fuel-specs">
             <div class="spec-item">
                 <div class="spec-label">AFR Lý thuyết</div>
-                <div class="spec-val" id="spec-afr">34.3</div>
+                <div class="spec-val" id="spec-afr">34.3 : 1</div>
             </div>
             <div class="spec-item">
                 <div class="spec-label">Nhiệt trị (LHV)</div>
@@ -355,7 +355,7 @@
                 <div class="spec-val" id="spec-ron">> 130</div>
             </div>
         </div>
-        <div class="fuel-desc" id="spec-desc">Đặc tính: Đang cập nhật...</div>
+        <div class="fuel-desc" id="spec-desc">⚡ Đặc tính: Tốc độ cháy cực nhanh, không phát thải Carbon, nhiệt độ cháy cao.</div>
     </div>
 
     <!-- Mode Switcher Tabs -->
@@ -475,7 +475,6 @@
 </div>
 
 <script>
-    // CƠ SỞ DỮ LIỆU ĐẶC TÍNH NHIÊN LIỆU ĐƯỢC HIỆU CHUẨN ĐỘ CHÍNH XÁC CAO
     const fuelDB = {
         "H2": { 
             name: "Khí Hydro (H2)", 
@@ -542,14 +541,22 @@
 
     function updateFuelInfo() {
         let sel = document.getElementById('fuelType');
+        if (!sel) return;
         currentFuelKey = sel.value;
         let f = fuelDB[currentFuelKey];
+        if (!f) return;
         
-        document.getElementById('spec-afr').innerText = f.afr + " : 1";
-        document.getElementById('spec-lhv').innerText = f.lhv + " MJ/kg";
-        document.getElementById('spec-carbon').innerText = f.hasCarbon ? "Có" : "Không";
-        document.getElementById('spec-ron').innerText = f.ron;
-        document.getElementById('spec-desc').innerText = f.desc;
+        let elAfr = document.getElementById('spec-afr');
+        let elLhv = document.getElementById('spec-lhv');
+        let elCarbon = document.getElementById('spec-carbon');
+        let elRon = document.getElementById('spec-ron');
+        let elDesc = document.getElementById('spec-desc');
+
+        if (elAfr) elAfr.innerText = f.afr + " : 1";
+        if (elLhv) elLhv.innerText = f.lhv + " MJ/kg";
+        if (elCarbon) elCarbon.innerText = f.hasCarbon ? "Có" : "Không";
+        if (elRon) elRon.innerText = f.ron;
+        if (elDesc) elDesc.innerText = f.desc;
     }
 
     function switchMode(mode) {
@@ -557,6 +564,8 @@
         let tabLogfile = document.getElementById('tabLogfile');
         let panelManual = document.getElementById('panelManual');
         let panelLogfile = document.getElementById('panelLogfile');
+
+        if (!tabManual || !tabLogfile || !panelManual || !panelLogfile) return;
 
         if (mode === 'manual') {
             tabManual.classList.add('active');
@@ -571,9 +580,10 @@
         }
     }
 
-    window.onload = function() {
+    // Force initialization immediately when script loads
+    document.addEventListener("DOMContentLoaded", function() {
         updateFuelInfo();
-    };
+    });
 
     function handleCSVUpload(event) {
         let file = event.target.files[0];
@@ -593,16 +603,14 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
     }
 
     function parseCSV(text) {
-        let lines = text.split(/
-|
-/);
+        let lines = text.split(/\r\n|\n/);
         csvRows = [];
         let headers = [];
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
             if (!line) continue;
-            let cols = line.split(/,|	/);
+            let cols = line.split(/,|\t/);
             cols = cols.map(c => c.replace(/^"|"$/g, '').trim());
 
             if (i === 0) {
@@ -618,8 +626,10 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
 
         if (csvRows.length > 0) {
             let infoBox = document.getElementById('fileInfo');
-            infoBox.style.display = 'block';
-            infoBox.innerText = `✅ Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile chuẩn UTF-8!`;
+            if (infoBox) {
+                infoBox.style.display = 'block';
+                infoBox.innerText = `✅ Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile chuẩn UTF-8!`;
+            }
             
             let tblHtml = "<tr>";
             headers.forEach(h => tblHtml += `<th>${h}</th>`);
@@ -631,8 +641,10 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
                 headers.forEach(h => tblHtml += `<td>${csvRows[i][h] || ''}</td>`);
                 tblHtml += "</tr>";
             }
-            document.getElementById('previewTable').innerHTML = tblHtml;
-            document.getElementById('tablePreviewContainer').style.display = 'block';
+            let previewTbl = document.getElementById('previewTable');
+            let previewContainer = document.getElementById('tablePreviewContainer');
+            if (previewTbl) previewTbl.innerHTML = tblHtml;
+            if (previewContainer) previewContainer.style.display = 'block';
         } else {
             alert("File CSV không hợp lệ hoặc không có dữ liệu!");
         }
@@ -640,6 +652,7 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
 
     function computePoint(rpm, throttle, injection, tempAmb, tempEng) {
         let fuel = fuelDB[currentFuelKey];
+        if (!fuel) fuel = fuelDB["H2"];
         let airDensityRatio = 298.15 / (tempAmb + 273.15); 
         let ve = 0.85; 
         if (rpm > 3500) ve -= (rpm - 3500) * 0.00005; 
@@ -718,10 +731,12 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
 
         let statusMsg = res.lambda >= 1.8 && res.lambda <= 2.5 ? "TỐI ƯU: Chế độ Ultra-lean burn." : "Điểm vận hành đã được mô phỏng thành công.";
         let box = document.getElementById('statusBox');
-        box.innerText = statusMsg;
+        if (box) box.innerText = statusMsg;
         
-        document.getElementById('resultsPanel').style.display = 'block';
-        document.getElementById('btnExcel').style.display = 'flex'; 
+        let resPanel = document.getElementById('resultsPanel');
+        let btnEx = document.getElementById('btnExcel');
+        if (resPanel) resPanel.style.display = 'block';
+        if (btnEx) btnEx.style.display = 'flex'; 
 
         currentData = {
             "Nhà nghiên cứu": "Mai Chí Khanh (VLUTE)",
@@ -860,8 +875,10 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
             }
         });
 
-        document.getElementById('chartSection').style.display = 'block';
-        document.getElementById('btnBatchExcel').style.display = 'flex';
+        let chartSec = document.getElementById('chartSection');
+        let btnBatchEx = document.getElementById('btnBatchExcel');
+        if (chartSec) chartSec.style.display = 'block';
+        if (btnBatchEx) btnBatchEx.style.display = 'flex';
         alert(`Đã mô phỏng thành công ${csvRows.length} mốc thời gian từ logfile (Tác giả: Mai Chí Khanh - VLUTE)!`);
     }
 
@@ -875,7 +892,7 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V10.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V11.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -893,7 +910,7 @@ Vui lòng vào Excel, chọn Save As và lưu dưới định dạng 'CSV (Comma
 
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
-        let link = document.getElementById("a");
+        let link = document.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", "Logfile_KetQua_MoPhong_VLUTE.csv");
         document.body.appendChild(link);
