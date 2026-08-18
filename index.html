@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine Predictor V4.1</title>
+    <title>Multi-Fuel Engine LogAnalyzer V5.0 (TS Master Style)</title>
+    <!-- Include Chart.js for professional logfile plotting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -35,7 +37,7 @@
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            max-width: 850px;
+            max-width: 950px;
             width: 100%;
         }
         h1 {
@@ -51,31 +53,32 @@
             margin-bottom: 25px;
             font-size: 14px;
         }
-        .fuel-selector {
+        .section-box {
             margin-bottom: 25px;
             padding: 20px;
             background-color: var(--info-bg);
             border-radius: 12px;
             border: 1px solid #bfdbfe;
         }
-        .fuel-selector label {
+        .section-box label {
             display: block;
             font-size: 15px;
             font-weight: 700;
             color: #1e3a8a;
             margin-bottom: 10px;
         }
-        select {
+        select, input[type="file"] {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             border: 1px solid #93c5fd;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: var(--primary);
             background-color: white;
             cursor: pointer;
             outline: none;
+            box-sizing: border-box;
         }
         .fuel-specs {
             display: grid;
@@ -224,16 +227,53 @@
             border: 1px solid #bbf7d0;
             line-height: 1.5;
         }
+
+        /* Chart Section (TS Master Style) */
+        .chart-section {
+            margin-top: 35px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .table-preview {
+            margin-top: 15px;
+            max-height: 180px;
+            overflow-y: auto;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        table.preview-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        table.preview-tbl th, table.preview-tbl td {
+            border: 1px solid #e2e8f0;
+            padding: 6px;
+        }
+        table.preview-tbl th {
+            background: #f1f5f9;
+            position: sticky;
+            top: 0;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Công cụ Dự báo Phát thải Đa Nhiên Liệu (V4.1)</h1>
-    <p class="subtitle">Phân tích Nhiệt động lực học Tùy chỉnh theo Thuộc tính Khí cháy</p>
+    <h1>Công cụ Dự báo & Phân tích Logfile (V5.0)</h1>
+    <p class="subtitle">Hỗ trợ Nạp file CSV theo Thời gian & Vẽ Biểu đồ Động lực học (Phong cách TS Master)</p>
 
     <!-- Fuel Selection Panel -->
-    <div class="fuel-selector">
+    <div class="section-box">
         <label>🛠 Lựa chọn Nhiên liệu Thử nghiệm:</label>
         <select id="fuelType" onchange="updateFuelInfo()">
             <option value="H2">Khí Hydro (H2)</option>
@@ -265,7 +305,22 @@
         <div class="fuel-desc" id="spec-desc">Đặc tính: Cháy siêu nhanh, không phát thải Carbon, nhiệt độ cháy cao.</div>
     </div>
 
-    <!-- Inputs -->
+    <!-- CSV Logfile Upload Panel -->
+    <div class="section-box" style="background-color: #f0fdf4; border-color: #bbf7d0;">
+        <label style="color: #166534;">📂 Nạp file Logfile CSV (Định dạng theo hàng ngang):</label>
+        <span class="desc" style="color: #15803d; display: block; margin-bottom: 8px;">
+            Cấu trúc file CSV cần có các cột: <b>Time, Tốc độ động cơ (RPM), Góc mở bướm ga (%), Nhiệt độ môi trường (°C), Nhiệt độ nước làm mát động cơ (°C)</b>
+        </span>
+        <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
+        
+        <div id="fileInfo" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #166534; display: none;"></div>
+        
+        <div class="table-preview" id="tablePreviewContainer" style="display: none;">
+            <table class="preview-tbl" id="previewTable"></table>
+        </div>
+    </div>
+
+    <!-- Manual Inputs -->
     <div class="grid-layout">
         <div class="input-group">
             <label>Tốc độ động cơ (RPM)</label>
@@ -275,15 +330,14 @@
         <div class="input-group">
             <label>Góc mở bướm ga (%)</label>
             <div class="slider-container">
-                <input type="range" id="throttle" value="82" min="0" max="100" oninput="document.getElementById('throt_val').innerText = this.value + '%'">
-                <span class="slider-val" id="throt_val">82%</span>
+                <input type="range" id="throttle" value="30" min="0" max="100" oninput="document.getElementById('throt_val').innerText = this.value + '%'">
+                <span class="slider-val" id="throt_val">30%</span>
             </div>
         </div>
 
         <div class="input-group">
             <label>Lưu lượng phun (mg/chu trình)</label>
-            <span class="desc">Mức phun nhiên liệu mỗi chu kỳ.</span>
-            <input type="number" id="injection" value="15.0" step="0.5" min="0.1" max="200">
+            <input type="number" id="injection" value="5.0" step="0.5" min="0.1" max="200">
         </div>
 
         <div class="input-group">
@@ -294,20 +348,22 @@
         <div class="input-group" style="grid-column: 1 / -1;">
             <label>Nhiệt độ nước làm mát động cơ (&deg;C)</label>
             <div class="slider-container">
-                <input type="range" id="tempEng" value="66" min="20" max="120" oninput="document.getElementById('tempEng_val').innerText = this.value + '&deg;C'">
-                <span class="slider-val" id="tempEng_val">66&deg;C</span>
+                <input type="range" id="tempEng" value="85" min="20" max="120" oninput="document.getElementById('tempEng_val').innerText = this.value + '&deg;C'">
+                <span class="slider-val" id="tempEng_val">85&deg;C</span>
             </div>
         </div>
     </div>
 
     <div class="button-group">
-        <button onclick="calculateEmissions()">Phân tích Khí xả</button>
+        <button onclick="calculateEmissions()">Chạy Mô phỏng Đơn điểm</button>
+        <button id="btnBatch" style="background-color: #8b5cf6; display: none;" onclick="runBatchSimulation()">🚀 Chạy Mô phỏng Toàn bộ Logfile & Vẽ Đồ Thị</button>
         <button id="btnExcel" class="btn-excel" onclick="exportToExcel()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             Lưu file Excel (CSV)
         </button>
     </div>
 
+    <!-- Results Panel -->
     <div class="results-panel" id="resultsPanel" style="display: none;">
         <div class="results-grid">
             <div class="metric-card">
@@ -336,24 +392,32 @@
             </div>
         </div>
         
-        <div class="status-box" id="statusBox">
-            Trạng thái hoạt động sẽ hiển thị ở đây.
+        <div class="status-box" id="statusBox">Trạng thái hoạt động sẽ hiển thị ở đây.</div>
+    </div>
+
+    <!-- Chart Section (TS Master Style) -->
+    <div class="chart-section" id="chartSection">
+        <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian (TS Master Log Viewer)</h3>
+        <div class="chart-container">
+            <canvas id="tsMasterChart"></canvas>
         </div>
     </div>
 </div>
 
 <script>
     const fuelDB = {
-        "H2": { name: "Hydro", afr: 34.3, lhv: 120, hasCarbon: false, hasNitrogen: false, ron: "> 130", desc: "Cháy siêu nhanh, hỗn hợp siêu loãng tốt, không phát thải CO/CO2, nhưng nhiệt độ cháy rất cao dễ sinh NOx nếu thiếu kiểm soát." },
-        "CNG": { name: "CNG / CH4", afr: 17.2, lhv: 48.0, hasCarbon: true, hasNitrogen: false, ron: "120", desc: "Nhiên liệu khí phổ biến, cháy êm, giảm HC và CO so với xăng. Kháng kích nổ tốt nhờ RON cao." },
-        "NH3": { name: "Amoniac", afr: 6.05, lhv: 18.6, hasCarbon: false, hasNitrogen: true, ron: "130", desc: "Năng lượng xanh không Carbon. Nhược điểm: khó bén lửa, màng lửa chậm, phát sinh nhiều NOx do Nito nội tại trong nhiên liệu (Fuel-NOx)." },
-        "LPG": { name: "LPG", afr: 15.6, lhv: 46.3, hasCarbon: true, hasNitrogen: false, ron: "105", desc: "Khí hóa lỏng (Propane/Butane). Đặc tính gần giống xăng nhưng cháy sạch hơn, dễ bay hơi." },
-        "GASOLINE": { name: "Xăng", afr: 14.7, lhv: 43.4, hasCarbon: true, hasNitrogen: false, ron: "95", desc: "Nhiên liệu lỏng truyền thống. Cần bộ xúc tác 3 chiều (TWC) để xử lý CO, HC và NOx tại mức Lambda = 1." },
-        "ETHANOL": { name: "Ethanol", afr: 9.0, lhv: 26.8, hasCarbon: true, hasNitrogen: false, ron: "108", desc: "Cồn sinh học, có oxy nội tại giúp cháy sạch, hấp thụ nhiệt bay hơi lớn làm mát buồng cháy." }
+        "H2": { name: "Hydro", afr: 34.3, lhv: 120, hasCarbon: false, hasNitrogen: false, ron: "> 130", desc: "Cháy siêu nhanh, không phát thải Carbon, nhiệt độ cháy cao." },
+        "CNG": { name: "CNG / CH4", afr: 17.2, lhv: 48.0, hasCarbon: true, hasNitrogen: false, ron: "120", desc: "Nhiên liệu khí phổ biến, cháy êm, giảm HC và CO so với xăng." },
+        "NH3": { name: "Amoniac", afr: 6.05, lhv: 18.6, hasCarbon: false, hasNitrogen: true, ron: "130", desc: "Năng lượng xanh không Carbon. Phát sinh nhiều NOx do Nito nội tại (Fuel-NOx)." },
+        "LPG": { name: "LPG", afr: 15.6, lhv: 46.3, hasCarbon: true, hasNitrogen: false, ron: "105", desc: "Khí hóa lỏng, đặc tính gần giống xăng nhưng cháy sạch hơn." },
+        "GASOLINE": { name: "Xăng", afr: 14.7, lhv: 43.4, hasCarbon: true, hasNitrogen: false, ron: "95", desc: "Nhiên liệu lỏng truyền thống, cần xúc tác TWC xử lý khí xả." },
+        "ETHANOL": { name: "Ethanol", afr: 9.0, lhv: 26.8, hasCarbon: true, hasNitrogen: false, ron: "108", desc: "Cồn sinh học, có oxy nội tại giúp cháy sạch, làm mát buồng cháy." }
     };
 
     let currentFuelKey = "H2";
     let currentData = {};
+    let csvRows = []; // Store parsed CSV data
+    let myChart = null;
     const MAX_AIR_MASS_MG = 600; 
 
     function updateFuelInfo() {
@@ -368,19 +432,73 @@
         document.getElementById('spec-desc').innerText = "* Đặc điểm: " + f.desc;
     }
 
-    // Tự động chạy ngay khi load trang để đồng bộ giao diện
     window.onload = function() {
         updateFuelInfo();
     };
 
-    function calculateEmissions() {
-        let fuel = fuelDB[currentFuelKey];
-        let rpm = parseFloat(document.getElementById('rpm').value) || 0;
-        let throttle = parseFloat(document.getElementById('throttle').value) || 0;
-        let injection = parseFloat(document.getElementById('injection').value) || 0;
-        let tempAmb = parseFloat(document.getElementById('tempAmb').value) || 0;
-        let tempEng = parseFloat(document.getElementById('tempEng').value) || 0;
+    // Parse CSV file uploaded by user
+    function handleCSVUpload(event) {
+        let file = event.target.files[0];
+        if (!file) return;
 
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let text = e.target.result;
+            parseCSV(text);
+        };
+        reader.readAsText(file, "UTF-8");
+    }
+
+    function parseCSV(text) {
+        let lines = text.split(/
+|
+/);
+        csvRows = [];
+        let headers = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) continue;
+            let cols = line.split(/,|	/); // Support comma or tab separated
+            cols = cols.map(c => c.replace(/^"|"$/g, '').trim());
+
+            if (i === 0) {
+                headers = cols;
+            } else {
+                let rowObj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    rowObj[headers[j]] = cols[j] !== undefined ? cols[j] : "";
+                }
+                csvRows.push(rowObj);
+            }
+        }
+
+        if (csvRows.length > 0) {
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('fileInfo.innerText = `Đã nạp thành công ${csvRows.length} dòng dữ liệu từ Logfile!`;
+            
+            // Show preview table
+            let tblHtml = "<tr>";
+            headers.forEach(h => tblHtml += `<th>${h}</th>`);
+            tblHtml += "</tr>";
+
+            let previewLimit = Math.min(5, csvRows.length);
+            for (let i = 0; i < previewLimit; i++) {
+                tblHtml += "<tr>";
+                headers.forEach(h => tblHtml += `<td>${csvRows[i][h] || ''}</td>`);
+                tblHtml += "</tr>";
+            }
+            document.getElementById('previewTable').innerHTML = tblHtml;
+            document.getElementById('tablePreviewContainer').style.display = 'block';
+            document.getElementById('btnBatch').style.display = 'flex'; // Show batch simulation button
+        } else {
+            alert("File CSV không hợp lệ hoặc không có dữ liệu!");
+        }
+    }
+
+    // Core calculation function for any given point
+    function computePoint(rpm, throttle, injection, tempAmb, tempEng) {
+        let fuel = fuelDB[currentFuelKey];
         let airDensityRatio = 298.15 / (tempAmb + 273.15); 
         let ve = 0.85; 
         if (rpm > 3500) ve -= (rpm - 3500) * 0.00005; 
@@ -400,33 +518,20 @@
         let peakTemp = (tempEng + 273.15) * 1.2 + deltaT; 
         
         let nox = 0, o2 = 0, co = 0, co2 = 0, hc = 0;
-        let statusMsg = "", statusColor = "#f0fdf4", statusBorder = "#bbf7d0", statusTextColor = "#166534";
 
-        if (lambda < 0.4) {
-            statusMsg = "CẢNH BÁO TỐI KHẨN: Quá ngộp nhiên liệu (Flood/Rich limit). Không thể cháy.";
-            statusColor = "#fef2f2"; statusBorder = "#fecaca"; statusTextColor = "#991b1b";
-        } else {
+        if (lambda >= 0.4) {
             o2 = lambda >= 1 ? 21 * (1 - 1/lambda) : 0;
-
             if (fuel.hasCarbon) {
                 if (lambda >= 1) {
-                    co2 = 14 / lambda; 
-                    co = 0.05 / lambda; 
-                    hc = 10 * lambda; 
+                    co2 = 14 / lambda; co = 0.05 / lambda; hc = 10 * lambda; 
                     if(lambda > 1.4) hc += (lambda - 1.4) * 500; 
                 } else {
-                    co2 = 14 * lambda; 
-                    co = (1 - lambda) * 15; 
-                    hc = (1 - lambda) * 3000; 
+                    co2 = 14 * lambda; co = (1 - lambda) * 15; hc = (1 - lambda) * 3000; 
                 }
             } else {
                 co2 = 0;
-                if (rpm <= 1200 && throttleFactor < 0.3 && tempEng < 75) {
-                    co = 0.03;
-                    hc = 15;
-                } else {
-                    co = 0; hc = 0;
-                }
+                if (rpm <= 1200 && throttleFactor < 0.3 && tempEng < 75) { co = 0.03; hc = 15; } 
+                else { co = 0; hc = 0; }
             }
 
             let thermalNox = 0;
@@ -441,88 +546,187 @@
             if (fuel.hasNitrogen && lambda > 0.8) {
                 fuelNox = (injection * 50) * Math.min(1.5, lambda); 
             }
-
             nox = thermalNox + fuelNox;
-
-            if (lambda >= 0.95 && lambda <= 1.05) {
-                statusMsg = "STOICHIOMETRIC: Tỷ lệ hòa trộn lý tưởng (Lambda ~ 1).";
-                statusColor = "#eff6ff"; statusBorder = "#bfdbfe"; statusTextColor = "#1e40af";
-            } else if (lambda > 1.05 && lambda < 1.6) {
-                statusMsg = "HỖN HỢP NGHÈO (Lean): Sinh lượng lớn khí độc NOx do thừa Oxy và nhiệt cao.";
-                statusColor = "#fffbeb"; statusBorder = "#fde68a"; statusTextColor = "#92400e";
-            } else if (lambda >= 1.6 && lambda <= 2.5) {
-                if(!fuel.hasCarbon) statusMsg = "SIÊU LOÃNG (Ultra-Lean): Chiến lược tối ưu kiểm soát NOx tuyệt đối.";
-                else statusMsg = "CẢNH BÁO LOÃNG: Khí chứa Carbon dễ gây hiện tượng bỏ lửa (Misfire).";
-                statusColor = "#f0fdf4"; statusBorder = "#bbf7d0"; statusTextColor = "#166534";
-            } else if (lambda < 0.95) {
-                statusMsg = "HỖN HỢP ĐẬM (Rich): Lãng phí nhiên liệu, sinh nhiều CO.";
-                statusColor = "#fef2f2"; statusBorder = "#fecaca"; statusTextColor = "#991b1b";
-            } else {
-                statusMsg = "QUÁ LOÃNG: Động cơ ngừng cháy (Lean limit misfire).";
-                statusColor = "#f8fafc"; statusBorder = "#cbd5e1"; statusTextColor = "#475569";
-            }
         }
 
-        nox = Math.min(6000, Math.max(0, nox));
-        let finalLambda = lambda > 20 ? "99.99" : lambda.toFixed(3);
-        let finalO2 = Math.max(0, o2).toFixed(2);
-        let finalCO2 = Math.max(0, co2).toFixed(2);
-        let finalCO = Math.max(0, co).toFixed(2);
-        let finalHC = Math.round(Math.max(0, hc));
-        let finalNox = Math.round(nox);
+        return {
+            lambda: lambda > 20 ? 99.99 : parseFloat(lambda.toFixed(3)),
+            nox: Math.round(Math.min(6000, Math.max(0, nox))),
+            co2: parseFloat(Math.max(0, co2).toFixed(2)),
+            co: parseFloat(Math.max(0, co).toFixed(2)),
+            hc: Math.round(Math.max(0, hc)),
+            o2: parseFloat(Math.max(0, o2).toFixed(2))
+        };
+    }
 
-        document.getElementById('out_lambda').innerText = lambda > 20 ? "∞" : finalLambda;
-        document.getElementById('out_nox').innerText = finalNox;
-        document.getElementById('out_co2').innerText = finalCO2;
-        document.getElementById('out_co').innerText = finalCO;
-        document.getElementById('out_hc').innerText = finalHC;
-        document.getElementById('out_o2').innerText = finalO2;
+    // Single point simulation from manual inputs
+    function calculateEmissions() {
+        let rpm = parseFloat(document.getElementById('rpm').value) || 0;
+        let throttle = parseFloat(document.getElementById('throttle').value) || 0;
+        let injection = parseFloat(document.getElementById('injection').value) || 0;
+        let tempAmb = parseFloat(document.getElementById('tempAmb').value) || 0;
+        let tempEng = parseFloat(document.getElementById('tempEng').value) || 0;
 
+        let res = computePoint(rpm, throttle, injection, tempAmb, tempEng);
+
+        document.getElementById('out_lambda').innerText = res.lambda === 99.99 ? "∞" : res.lambda;
+        document.getElementById('out_nox').innerText = res.nox;
+        document.getElementById('out_co2').innerText = res.co2;
+        document.getElementById('out_co').innerText = res.co;
+        document.getElementById('out_hc').innerText = res.hc;
+        document.getElementById('out_o2').innerText = res.o2;
+
+        let statusMsg = res.lambda >= 1.8 && res.lambda <= 2.5 ? "TỐI ƯU: Chế độ Ultra-lean burn." : "Điểm vận hành đã được mô phỏng thành công.";
         let box = document.getElementById('statusBox');
         box.innerText = statusMsg;
-        box.style.backgroundColor = statusColor;
-        box.style.borderColor = statusBorder;
-        box.style.color = statusTextColor;
         
         document.getElementById('resultsPanel').style.display = 'block';
         document.getElementById('btnExcel').style.display = 'flex'; 
 
         currentData = {
-            "Loại nhiên liệu": fuel.name,
-            "AFR Lý thuyết": fuel.afr,
+            "Loại nhiên liệu": fuelDB[currentFuelKey].name,
             "Tốc độ động cơ (RPM)": rpm,
             "Góc mở bướm ga (%)": throttle,
             "Lượng phun (mg)": injection,
-            "Nhiệt độ MT (C)": tempAmb,
-            "Nhiệt độ ĐC (C)": tempEng,
-            "Lambda": finalLambda,
-            "NOx (ppm)": finalNox,
-            "CO2 (%)": finalCO2,
-            "CO (%)": finalCO,
-            "HC (ppm)": finalHC,
-            "O2 (%)": finalO2,
+            "Lambda": res.lambda,
+            "NOx (ppm)": res.nox,
+            "CO2 (%)": res.co2,
             "Trạng thái": statusMsg
         };
     }
 
-    function exportToExcel() {
-        let csvContent = "\uFEFF";
-        csvContent += "Thông số,Giá trị\n";
-        
-        for (let key in currentData) {
-            let value = typeof currentData[key] === 'string' ? `"${currentData[key]}"` : currentData[key];
-            csvContent += `"${key}",${value}\n`;
+    // Batch simulation over CSV logfile and plot TS Master style chart
+    function runBatchSimulation() {
+        if (csvRows.length === 0) {
+            alert("Chưa có dữ liệu CSV! Vui lòng nạp file logfile trước.");
+            return;
         }
 
+        let times = [];
+        let rpmList = [], noxList = [], lambdaList = [], co2List = [];
+
+        // Flexible column header mapping search
+        let findKey = (row, candidates) => {
+            let keys = Object.keys(row);
+            for (let c of candidates) {
+                let found = keys.find(k => k.toLowerCase().includes(c.toLowerCase()));
+                if (found) return row[found];
+            }
+            return null;
+        };
+
+        csvRows.forEach((row, idx) => {
+            let timeVal = findKey(row, ["time", "t"]) || `t_${idx}`;
+            let rpmVal = parseFloat(findKey(row, ["tốc độ", "rpm", "speed"])) || 2000;
+            let throttleVal = parseFloat(findKey(row, ["bướm ga", "throttle", "tps"])) || 30;
+            let tempAmbVal = parseFloat(findKey(row, ["môi trường", "ambient", "t_amb"])) || 30;
+            let tempEngVal = parseFloat(findKey(row, ["nước làm mát", "engine", "coolant", "t_eng"])) || 85;
+
+            // Auto estimate injection based on throttle if not explicitly in CSV
+            let injectionVal = 5.0 * (throttleVal / 30);
+
+            let res = computePoint(rpmVal, throttleVal, injectionVal, tempAmbVal, tempEngVal);
+
+            times.push(timeVal);
+            rpmList.push(rpmVal);
+            noxList.push(res.nox);
+            lambdaList.push(res.lambda);
+            co2List.push(res.co2);
+        });
+
+        // Draw TS Master Style Multi-Axis Chart
+        let ctx = document.getElementById('tsMasterChart').getContext('2d');
+        if (myChart) {
+            myChart.destroy();
+        }
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets: [
+                    {
+                        label: 'NOx (ppm)',
+                        data: noxList,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        yAxisID: 'y-nox',
+                        borderWidth: 2,
+                        pointRadius: 2
+                    },
+                    {
+                        label: 'Tốc độ động cơ (RPM)',
+                        data: rpmList,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        yAxisID: 'y-rpm',
+                        borderWidth: 2,
+                        pointRadius: 2
+                    },
+                    {
+                        label: 'Hệ số Lambda (λ)',
+                        data: lambdaList,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        yAxisID: 'y-lambda',
+                        borderWidth: 2,
+                        pointRadius: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Thời gian (Time)' }
+                    },
+                    'y-nox': {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'NOx (ppm)', color: '#ef4444' },
+                        grid: { drawOnChartArea: true }
+                    },
+                    'y-rpm': {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'RPM', color: '#2563eb' },
+                        grid: { drawOnChartArea: false }
+                    },
+                    'y-lambda': {
+                        type: 'linear',
+                        display: false, // hidden scale to avoid clutter, but tracks values
+                        position: 'right',
+                        min: 0,
+                        max: 5
+                    }
+                }
+            }
+        });
+
+        document.getElementById('chartSection').style.display = 'block';
+        alert(`Đã mô phỏng thành công ${csvRows.length} mốc thời gian từ logfile! Biểu đồ TS Master đã sẵn sàng.`);
+    }
+
+    function exportToExcel() {
+        let csvContent = "﻿";
+        csvContent += "Thông số,Giá trị
+";
+        for (let key in currentData) {
+            csvContent += `"${key}","${currentData[key]}"
+`;
+        }
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        
-        let date = new Date();
-        let timeStr = date.getFullYear() + "" + (date.getMonth()+1).toString().padStart(2, '0') + "" + date.getDate().toString().padStart(2, '0') + "_" + date.getHours().toString().padStart(2, '0') + date.getMinutes().toString().padStart(2, '0');
-        link.setAttribute("download", "DuBao_PhatThai_V4.1_" + timeStr + ".csv");
-        
+        link.setAttribute("download", "DuBao_PhatThai_V5.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
