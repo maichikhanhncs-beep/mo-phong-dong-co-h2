@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Fuel Engine LogAnalyzer V14.0 - VLUTE</title>
+    <title>Multi-Fuel Engine LogAnalyzer V15.0 - VLUTE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -315,7 +315,6 @@
 <body>
 
 <div class="container">
-    <!-- Header with Official VLUTE Logo & Author -->
     <div class="header-brand">
         <img src="https://upload.wikimedia.org/wikipedia/vi/d/d0/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_S%C6%B0_ph%E1%BA%A1m_K%E1%BB%B9_thu%E1%BA%ADt_V%C4%A9nh_Long.svg" alt="VLUTE Logo">
         <div class="header-titles">
@@ -325,7 +324,6 @@
         </div>
     </div>
 
-    <!-- Fuel Selection Panel -->
     <div class="section-box">
         <label>🛠 Lựa chọn Nhiên liệu Thử nghiệm:</label>
         <select id="fuelType" onchange="updateFuelInfo()">
@@ -358,13 +356,11 @@
         <div class="fuel-desc" id="spec-desc">⚡ Đặc tính: Đang tải dữ liệu...</div>
     </div>
 
-    <!-- Mode Switcher Tabs -->
     <div class="mode-tabs">
         <button class="mode-tab active" id="tabManual" type="button" onclick="switchMode('manual')">🎛 Chế độ Điều chỉnh Thủ công</button>
         <button class="mode-tab" id="tabLogfile" type="button" onclick="switchMode('logfile')">📂 Chế độ Nạp Logfile CSV</button>
     </div>
 
-    <!-- PANEL 1: MANUAL MODE -->
     <div id="panelManual" class="mode-panel active">
         <div class="grid-layout">
             <div class="input-group">
@@ -408,13 +404,12 @@
         </div>
     </div>
 
-    <!-- PANEL 2: LOGFILE MODE -->
     <div id="panelLogfile" class="mode-panel">
         <div class="section-box" style="background-color: #f0fdf4; border-color: #bbf7d0; margin-bottom: 0;">
             <label style="color: #166534;">📂 Nạp file Logfile CSV (Hỗ trợ tự động nhận diện chuẩn cột & mã hóa):</label>
             <span class="desc" style="color: #15803d; display: block; margin-bottom: 12px;">
                 <b>Hướng dẫn cột logfile chuẩn (hàng ngang):</b> Cột 1: <b>Time</b> | Cột 2: <b>RPM (Tốc độ)</b> | Cột 3: <b>Throttle (Bướm ga %)</b> | Cột 4: <b>Nhiệt độ MT (°C)</b> | Cột 5: <b>Nhiệt độ nước làm mát (°C)</b><br>
-                <i>Hệ thống tự động bỏ qua dòng tiêu đề rác và lọc dữ liệu số chuẩn xác 100%.</i>
+                <i>Hệ thống tự động bỏ qua dòng tiêu đề và đọc chính xác 100% dữ liệu số.</i>
             </span>
             <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
             
@@ -433,7 +428,6 @@
         </div>
     </div>
 
-    <!-- Results Panel -->
     <div class="results-panel" id="resultsPanel" style="display: none;">
         <div class="results-grid">
             <div class="metric-card">
@@ -465,7 +459,6 @@
         <div class="status-box" id="statusBox">Trạng thái hoạt động sẽ hiển thị ở đây.</div>
     </div>
 
-    <!-- Chart Section -->
     <div class="chart-section" id="chartSection">
         <h3 style="margin-top: 0; color: #1e3a8a; text-align: center;">📈 Biểu đồ Động lực học Khí xả theo Thời gian </h3>
         <div class="chart-container">
@@ -615,14 +608,8 @@
 
             if (cols.length < 2) continue;
 
-            // FIX: Ignore header rows or text header rows strictly
-            let firstColLower = cols[0].toLowerCase();
-            if (firstColLower.includes("time") || firstColLower.includes("t") || firstColLower.includes("thời gian") || firstColLower.includes("file") || firstColLower.includes("tốc độ") || firstColLower.includes("rpm")) {
-                continue;
-            }
-
-            let checkNum = parseFloat(cols[1]?.replace(',', '.'));
-            if (isNaN(checkNum)) {
+            // FIX V15: Strictly skip row 0 (header row) and any row where column 1 is not a valid number
+            if (i === 0 || cols[1].toLowerCase().includes("rpm") || cols[1].toLowerCase().includes("tốc độ") || isNaN(parseFloat(cols[1].replace(',', '.')))) {
                 continue;
             }
 
@@ -645,7 +632,7 @@
             let infoBox = document.getElementById('fileInfo');
             if (infoBox) {
                 infoBox.style.display = 'block';
-                infoBox.innerText = `✅ Đã lọc và nạp thành công ${parsedRowsData.length} dòng dữ liệu thực tế từ Logfile!`;
+                infoBox.innerText = `✅ Đã nạp thành công ${parsedRowsData.length} dòng dữ liệu số thực tế từ Logfile!`;
             }
             
             let tblHtml = "<tr><th>Time</th><th>Tốc độ (RPM)</th><th>Bướm ga (%)</th><th>Nhiệt độ MT (°C)</th><th>Nhiệt độ ĐC (°C)</th></tr>";
@@ -900,7 +887,7 @@
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V14.csv");
+        link.setAttribute("download", "DuBao_PhatThai_VLUTE_V15.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -928,4 +915,4 @@
 </script>
 
 </body>
-</html>
+</html>F
